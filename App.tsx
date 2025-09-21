@@ -70,6 +70,19 @@ const App: React.FC = () => {
     };
   }, [keyboardHeight]);
 
+  // Apply keyboard-open class to body when keyboard is open
+  useEffect(() => {
+    if (isKeyboardOpen) {
+      document.body.classList.add('keyboard-open');
+    } else {
+      document.body.classList.remove('keyboard-open');
+    }
+    
+    return () => {
+      document.body.classList.remove('keyboard-open');
+    };
+  }, [isKeyboardOpen]);
+
   const handleSaveSettings = (newSettings: Settings) => {
     setSettings(newSettings);
     saveSettings(newSettings);
@@ -168,7 +181,7 @@ const App: React.FC = () => {
       style={{ 
         height: 'calc(var(--vh, 1vh) * 100)', 
         minHeight: 'calc(var(--vh, 1vh) * 100)',
-        transform: (isKeyboardOpen && messages.length > 0) ? `translateY(-${Math.min(keyboardHeight * 0.5, keyboardHeight - 100)}px)` : 'none',
+        transform: isKeyboardOpen ? `translateY(-${Math.min(keyboardHeight * 0.5, keyboardHeight - 100)}px)` : 'none',
         transition: 'transform 0.3s ease-out'
       }}
     >

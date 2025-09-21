@@ -146,7 +146,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         style={{
           height: 'calc(var(--vh, 1vh) * 100 - 60px - 80px)',
           minHeight: 'calc(var(--vh, 1vh) * 100 - 60px - 80px)',
-          paddingBottom: (isKeyboardOpen && messages.length > 0) ? `${Math.min(keyboardHeight * 0.1, 100)}px` : '80px'
+          paddingBottom: isKeyboardOpen ? `${Math.min(keyboardHeight * 0.1, 100)}px` : '80px'
         }}
       >
         {messages.length === 0 && !currentAiResponse ? (
@@ -189,7 +189,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <footer 
         className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30 cursor-pointer"
         style={{
-          bottom: (isKeyboardOpen && messages.length > 0) ? `${Math.min(keyboardHeight * 0.2, keyboardHeight - 50)}px` : '0px',
+          bottom: isKeyboardOpen ? `${Math.min(keyboardHeight * 0.2, keyboardHeight - 50)}px` : '0px',
           transition: 'bottom 0.3s ease-out'
         }}
         onClick={handleTextareaFocus}
