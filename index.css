@@ -69,54 +69,9 @@ html, body {
     height: calc(var(--vh, 1vh) * 100);
   }
 
-  /* Better mobile keyboard handling */
+  /* Mobile keyboard handling */
   .mobile-keyboard-open {
     height: calc(var(--vh, 1vh) * 100) !important;
-  }
-
-  /* PWA-specific keyboard handling */
-  .pwa-keyboard-open {
-    height: calc(var(--vh, 1vh) * 100) !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
-  }
-
-  .pwa-keyboard-main {
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: 0;
-    margin-bottom: 0;
-  }
-
-  .pwa-keyboard-footer {
-    position: fixed !important;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 1001;
-    background: rgba(42, 42, 42, 0.95);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    transform: translateY(0);
-    transition: all 0.3s ease-out;
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Position footer above keyboard */
-  .pwa-keyboard-footer.above-keyboard {
-    bottom: var(--keyboard-height, 0px);
-    transform: translateY(0);
-  }
-
-  /* Ensure input stays above keyboard in PWA */
-  .pwa-keyboard-footer input,
-  .pwa-keyboard-footer textarea {
-    position: relative;
-    z-index: 1002;
   }
 
   /* Ensure input stays visible when keyboard is open */

@@ -37,7 +37,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 
-  // PWA detection and mobile keyboard handling
+  // Mobile keyboard handling with improved detection
   useEffect(() => {
     // Detect if running in PWA mode
     const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
@@ -45,97 +45,73 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                      document.referrer.includes('android-app://');
     setIsPWA(isPWAMode);
 
+    let initialHeight = window.visualViewport?.height || window.innerHeight;
+    setInitialViewportHeight(initialHeight);
+
     const handleResize = () => {
-      const currentViewportHeight = window.visualViewport?.height || window.innerHeight;
+      const currentHeight = window.visualViewport?.height || window.innerHeight;
+      const heightDifference = initialHeight - currentHeight;
       
-      // For PWA mode, use a different approach
-      if (isPWAMode) {
-        // In PWA, we need to track the initial height and compare
-        if (initialViewportHeight === 0) {
-          setInitialViewportHeight(currentViewportHeight);
-          return;
-        }
-        
-        const heightDifference = initialViewportHeight - currentViewportHeight;
-        const keyboardOpen = heightDifference > 100; // Lower threshold for PWA
-        setIsKeyboardOpen(keyboardOpen);
-        
-        if (keyboardOpen) {
-          // Calculate keyboard height for positioning
-          const calculatedKeyboardHeight = heightDifference;
-          setKeyboardHeight(calculatedKeyboardHeight);
-        } else {
-          // Reset keyboard height when keyboard closes
-          setKeyboardHeight(0);
-        }
+      // More sensitive detection for mobile
+      const keyboardOpen = heightDifference > 50;
+      setIsKeyboardOpen(keyboardOpen);
+      
+      if (keyboardOpen) {
+        setKeyboardHeight(heightDifference);
       } else {
-        // Browser mode - use visual viewport API
-        const heightDifference = initialViewportHeight - currentViewportHeight;
-        const keyboardOpen = heightDifference > 150;
-        setIsKeyboardOpen(keyboardOpen);
+        setKeyboardHeight(0);
       }
       
       // Update CSS custom property for viewport height
-      const vh = currentViewportHeight * 0.01;
+      const vh = currentHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
 
-    // Set initial viewport height
-    const currentHeight = window.visualViewport?.height || window.innerHeight;
-    setInitialViewportHeight(currentHeight);
-
-    // Listen for viewport changes (mobile keyboard)
+    // Listen for viewport changes
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleResize);
     } else {
       window.addEventListener('resize', handleResize);
     }
 
-    // Additional PWA-specific handling
-    if (isPWAMode) {
-      // Listen for orientation changes in PWA
-      window.addEventListener('orientationchange', () => {
-        setTimeout(() => {
-          const newHeight = window.visualViewport?.height || window.innerHeight;
-          setInitialViewportHeight(newHeight);
-          handleResize();
-        }, 500);
-      });
+    // Handle orientation changes
+    const handleOrientationChange = () => {
+      setTimeout(() => {
+        initialHeight = window.visualViewport?.height || window.innerHeight;
+        setInitialViewportHeight(initialHeight);
+        handleResize();
+      }, 500);
+    };
 
-      // PWA-specific keyboard detection using focus/blur events
-      const handleInputFocus = () => {
-        setTimeout(() => {
-          const currentHeight = window.visualViewport?.height || window.innerHeight;
-          if (currentHeight < initialViewportHeight - 50) {
-            setIsKeyboardOpen(true);
-            const heightDifference = initialViewportHeight - currentHeight;
-            setKeyboardHeight(heightDifference);
-          }
-        }, 100); // Faster response
-      };
+    window.addEventListener('orientationchange', handleOrientationChange);
 
-      const handleInputBlur = () => {
-        setTimeout(() => {
-          const currentHeight = window.visualViewport?.height || window.innerHeight;
-          if (currentHeight >= initialViewportHeight - 50) {
-            setIsKeyboardOpen(false);
-            setKeyboardHeight(0);
-          }
-        }, 300);
-      };
-
-      // Add focus/blur listeners to textarea
-      if (textareaRef.current) {
-        textareaRef.current.addEventListener('focus', handleInputFocus);
-        textareaRef.current.addEventListener('blur', handleInputBlur);
-      }
-
-      return () => {
-        if (textareaRef.current) {
-          textareaRef.current.removeEventListener('focus', handleInputFocus);
-          textareaRef.current.removeEventListener('blur', handleInputBlur);
+    // Focus/blur handlers for better keyboard detection
+    const handleInputFocus = () => {
+      setTimeout(() => {
+        const currentHeight = window.visualViewport?.height || window.innerHeight;
+        const heightDiff = initialHeight - currentHeight;
+        if (heightDiff > 30) {
+          setIsKeyboardOpen(true);
+          setKeyboardHeight(heightDiff);
         }
-      };
+      }, 100);
+    };
+
+    const handleInputBlur = () => {
+      setTimeout(() => {
+        const currentHeight = window.visualViewport?.height || window.innerHeight;
+        const heightDiff = initialHeight - currentHeight;
+        if (heightDiff <= 30) {
+          setIsKeyboardOpen(false);
+          setKeyboardHeight(0);
+        }
+      }, 300);
+    };
+
+    // Add focus/blur listeners
+    if (textareaRef.current) {
+      textareaRef.current.addEventListener('focus', handleInputFocus);
+      textareaRef.current.addEventListener('blur', handleInputBlur);
     }
 
     return () => {
@@ -144,9 +120,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       } else {
         window.removeEventListener('resize', handleResize);
       }
-      window.removeEventListener('orientationchange', handleResize);
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      if (textareaRef.current) {
+        textareaRef.current.removeEventListener('focus', handleInputFocus);
+        textareaRef.current.removeEventListener('blur', handleInputBlur);
+      }
     };
-  }, [isPWA, initialViewportHeight]);
+  }, []);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -188,10 +168,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div 
-      className={`flex flex-col h-screen w-full mx-auto relative z-10 transition-all duration-300 ${isKeyboardOpen ? (isPWA ? 'pwa-keyboard-open' : 'pb-0') : ''}`} 
+      className="flex flex-col h-screen w-full mx-auto relative z-10"
       style={{ 
         height: 'calc(var(--vh, 1vh) * 100)',
-        paddingBottom: isKeyboardOpen && isPWA ? `${keyboardHeight}px` : '0px',
+        paddingBottom: isKeyboardOpen ? `${keyboardHeight}px` : '0px',
         transition: 'padding-bottom 0.3s ease-out'
       }}
     >
@@ -226,7 +206,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </header>
 
-      <main className={`flex-1 overflow-y-auto relative transition-all duration-300 ${isKeyboardOpen ? (isPWA ? 'pwa-keyboard-main' : 'pb-2') : ''}`} style={{ minHeight: 0 }}>
+      <main className="flex-1 overflow-y-auto relative" style={{ minHeight: 0 }}>
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
@@ -265,15 +245,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       )}
 
       <footer 
-        className={`p-3 sm:p-4 glass border-t border-border transition-all duration-300 ${isKeyboardOpen ? (isPWA ? 'pwa-keyboard-footer above-keyboard' : 'sticky bottom-0 z-30') : ''}`}
+        className="p-3 sm:p-4 glass border-t border-border sticky bottom-0 z-30"
         style={{
-          '--keyboard-height': isKeyboardOpen && isPWA ? `${keyboardHeight}px` : '0px',
-          position: isKeyboardOpen && isPWA ? 'fixed' : 'relative',
-          bottom: isKeyboardOpen && isPWA ? `${keyboardHeight}px` : 'auto',
-          left: isKeyboardOpen && isPWA ? '0' : 'auto',
-          right: isKeyboardOpen && isPWA ? '0' : 'auto',
-          zIndex: isKeyboardOpen && isPWA ? 1001 : 'auto'
-        } as React.CSSProperties}
+          position: isKeyboardOpen ? 'fixed' : 'sticky',
+          bottom: isKeyboardOpen ? `${keyboardHeight}px` : '0',
+          left: isKeyboardOpen ? '0' : 'auto',
+          right: isKeyboardOpen ? '0' : 'auto',
+          zIndex: 1001,
+          transition: 'all 0.3s ease-out'
+        }}
       >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">
