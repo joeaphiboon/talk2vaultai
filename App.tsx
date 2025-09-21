@@ -19,9 +19,6 @@ const App: React.FC = () => {
   const [currentAiResponse, setCurrentAiResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-
   // Load settings and vault files from localStorage on component mount
   useEffect(() => {
     const savedSettings = loadSettings();
@@ -34,54 +31,6 @@ const App: React.FC = () => {
       setVaultFiles(savedVaultFiles);
     }
   }, []);
-
-  // Keyboard detection
-  useEffect(() => {
-    const updateViewportHeight = () => {
-      const height = window.visualViewport?.height || window.innerHeight;
-      const fullHeight = window.innerHeight;
-      const heightDifference = fullHeight - height;
-      
-      // Detect keyboard state
-      const keyboardOpen = heightDifference > 150; // Threshold for keyboard detection
-      setIsKeyboardOpen(keyboardOpen);
-      setKeyboardHeight(keyboardOpen ? heightDifference : 0);
-      
-      // Update CSS custom property for viewport height
-      const vh = height * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-      document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
-    };
-
-    updateViewportHeight();
-
-    // Listen for viewport changes (keyboard show/hide)
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateViewportHeight);
-    } else {
-      window.addEventListener('resize', updateViewportHeight);
-    }
-
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateViewportHeight);
-      }
-      window.removeEventListener('resize', updateViewportHeight);
-    };
-  }, [keyboardHeight]);
-
-  // Apply keyboard-open class to body when keyboard is open
-  useEffect(() => {
-    if (isKeyboardOpen) {
-      document.body.classList.add('keyboard-open');
-    } else {
-      document.body.classList.remove('keyboard-open');
-    }
-    
-    return () => {
-      document.body.classList.remove('keyboard-open');
-    };
-  }, [isKeyboardOpen]);
 
   const handleSaveSettings = (newSettings: Settings) => {
     setSettings(newSettings);
@@ -176,15 +125,7 @@ const App: React.FC = () => {
   }, [isLoading, vaultFiles, settings.apiKey]);
 
   return (
-    <div 
-      className="bg-gradient-to-br from-background via-background to-background/50 text-text-primary h-screen flex flex-col font-sans relative overflow-hidden" 
-      style={{ 
-        height: 'calc(var(--vh, 1vh) * 100)', 
-        minHeight: 'calc(var(--vh, 1vh) * 100)',
-        transform: isKeyboardOpen ? `translateY(-${Math.min(keyboardHeight * 0.5, keyboardHeight - 100)}px)` : 'none',
-        transition: 'transform 0.3s ease-out'
-      }}
-    >
+    <div className="bg-gradient-to-br from-background via-background to-background/50 text-text-primary h-screen flex flex-col font-sans relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-0 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse"></div>
@@ -201,8 +142,6 @@ const App: React.FC = () => {
         onClearConversation={handleClearConversation}
         vaultFileCount={vaultFiles.length}
         hasApiKey={!!settings.apiKey.trim()}
-        isKeyboardOpen={isKeyboardOpen}
-        keyboardHeight={keyboardHeight}
       />
       {isSettingsModalOpen && (
         <SettingsModal

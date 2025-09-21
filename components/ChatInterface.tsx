@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '../types';
 import Message from './Message';
@@ -15,8 +14,6 @@ interface ChatInterfaceProps {
   onSubmit: (prompt: string) => void;
   onSettingsClick: () => void;
   onClearConversation: () => void;
-  isKeyboardOpen: boolean;
-  keyboardHeight: number;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -29,15 +26,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSubmit,
   onSettingsClick,
   onClearConversation,
-  isKeyboardOpen,
-  keyboardHeight,
 }) => {
   const [prompt, setPrompt] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-
-  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -47,25 +40,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Auto-focus textarea after AI response completes
   useEffect(() => {
     if (!currentAiResponse && messages.length > 0) {
-      // AI response just completed, focus textarea with multiple attempts
-      const focusTextarea = () => {
+      setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus();
-          // Force scroll to bottom to ensure textarea is visible
-          textareaRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'end' 
-          });
         }
-      };
-      
-      // Multiple attempts to ensure focus works
-      setTimeout(focusTextarea, 100);
-      setTimeout(focusTextarea, 500);
-      setTimeout(focusTextarea, 1000);
+      }, 500);
     }
   }, [currentAiResponse, messages.length]);
-
 
   // Reset textarea height when prompt is cleared
   useEffect(() => {
@@ -82,34 +63,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleTextareaFocus = () => {
-    // Force focus and ensure textarea is visible
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-      
-      // Multiple attempts to ensure focus works
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-          // Scroll textarea into view if needed
-          textareaRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'end' 
-          });
-        }
-      }, 100);
-      
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-        }
-      }, 500);
-    }
-  };
-
-
   return (
-    <>
+    <div className="h-screen flex flex-col">
+      {/* 1. Header - Fixed */}
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass fixed top-0 left-0 right-0 z-20">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="p-1.5 bg-gradient-accent rounded-lg shadow-glow">
@@ -141,14 +97,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </header>
 
-      <main 
-        className="flex-1 overflow-y-auto pt-16 pb-20 min-h-0"
-        style={{
-          height: 'calc(var(--vh, 1vh) * 100 - 60px - 80px)',
-          minHeight: 'calc(var(--vh, 1vh) * 100 - 60px - 80px)',
-          paddingBottom: isKeyboardOpen ? `${Math.min(keyboardHeight * 0.1, 100)}px` : '80px'
-        }}
-      >
+      {/* 2. Content Area - Scrollable */}
+      <main className="flex-1 overflow-y-auto pt-16 pb-20">
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
@@ -156,44 +106,37 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             hasVaultFiles={vaultFileCount > 0}
           />
         ) : (
-          <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
-            {messages.map((msg, index) => (
-              <div key={index} className="animate-slideUp" style={{ animationDelay: `${index * 0.1}s` }}>
-                <Message role={msg.role} content={msg.content} />
-              </div>
+          <div className="flex flex-col gap-4 p-4 sm:p-6">
+            {messages.map((message, index) => (
+              <Message
+                key={index}
+                role={message.role}
+                content={message.content}
+                isLoading={false}
+              />
             ))}
             {currentAiResponse && (
-              <div className="animate-slideUp">
-                <Message role="model" content={currentAiResponse} isStreaming />
-              </div>
+              <Message
+                role="model"
+                content={currentAiResponse}
+                isStreaming={true}
+                isLoading={false}
+              />
             )}
-            {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && !currentAiResponse && (
-               <div className="animate-slideUp">
-                 <Message role="model" content="" isLoading />
-               </div>
+            {isLoading && (
+              <Message
+                role="model"
+                content=""
+                isLoading={true}
+              />
             )}
             <div ref={messagesEndRef} />
           </div>
         )}
       </main>
 
-      {error && (
-        <div className="mx-4 sm:mx-6 mb-4 sm:mb-6 px-4 py-3 text-error bg-error/10 border border-error/30 rounded-xl text-sm animate-slideUp backdrop-blur-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-error rounded-full animate-pulse"></div>
-            {error}
-          </div>
-        </div>
-      )}
-
-      <footer 
-        className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30 cursor-pointer"
-        style={{
-          bottom: isKeyboardOpen ? `${Math.min(keyboardHeight * 0.2, keyboardHeight - 50)}px` : '0px',
-          transition: 'bottom 0.3s ease-out'
-        }}
-        onClick={handleTextareaFocus}
-      >
+      {/* 3. Text Input - Fixed */}
+      <footer className="p-3 sm:p-4 glass border-t border-border fixed bottom-0 left-0 right-0 z-30">
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">
             <textarea
@@ -205,28 +148,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
               }}
-              onClick={handleTextareaFocus}
-              onFocus={handleTextareaFocus}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleSubmit(e);
                 }
               }}
-              placeholder={hasApiKey ? "ถามคำถามเกี่ยวกับบันทึกของคุณ... (Ask a question about your notes...)" : "Please set your API key in settings first..."}
-              className={`w-full glass-input rounded-lg px-3 py-2 text-text-primary placeholder-text-secondary focus:outline-none resize-none text-sm sm:text-base leading-normal transition-all duration-200 ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
-              style={{ 
-                minHeight: '36px', 
-                maxHeight: '100px',
-                height: '36px'
-              }}
+              placeholder="ถามคำถามเกี่ยวกับบันทึกของคุณ... (Ask a question about your notes...)"
+              className="w-full glass-input rounded-lg px-3 py-2 text-text-primary placeholder-text-secondary focus:outline-none resize-none text-sm sm:text-base leading-normal transition-all duration-200"
               rows={1}
-              disabled={isLoading || !hasApiKey}
+              style={{ minHeight: '36px', maxHeight: '100px' }}
             />
           </div>
           <button
             type="submit"
-            className={`bg-gradient-accent text-white p-2 rounded-lg hover:shadow-glow disabled:bg-text-muted disabled:cursor-not-allowed transition-all duration-200 ${!hasApiKey ? 'opacity-50' : ''}`}
+            className="bg-gradient-accent text-white p-2 rounded-lg hover:shadow-glow disabled:bg-text-muted disabled:cursor-not-allowed transition-all duration-200"
             disabled={isLoading || !prompt.trim() || !hasApiKey}
             title={!hasApiKey ? 'Set API key first' : 'Send message'}
           >
@@ -234,7 +170,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </button>
         </form>
       </footer>
-    </>
+
+      {/* Error Display */}
+      {error && (
+        <div className="fixed top-20 left-4 right-4 z-40">
+          <div className="bg-destructive/90 text-destructive-foreground px-4 py-3 rounded-lg shadow-lg border border-destructive/20">
+            {error}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

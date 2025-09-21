@@ -78,27 +78,7 @@ html, body {
     z-index: 30 !important;
   }
 
-  main {
-    z-index: 10 !important;
-    position: relative !important;
-    height: calc(var(--vh, 1vh) * 100 - 60px - 80px) !important;
-    min-height: calc(var(--vh, 1vh) * 100 - 60px - 80px) !important;
-  }
 
-  /* Keyboard adjustments */
-  .keyboard-open {
-    transform: translateY(calc(min(var(--keyboard-height, 0px) * 0.5, var(--keyboard-height, 0px) - 100px) * -1)) !important;
-    transition: transform 0.3s ease-out !important;
-  }
-
-  .keyboard-open main {
-    padding-bottom: calc(min(var(--keyboard-height, 0px) * 0.1, 100px)) !important;
-  }
-
-  .keyboard-open footer {
-    bottom: calc(min(var(--keyboard-height, 0px) * 0.2, var(--keyboard-height, 0px) - 50px)) !important;
-    transition: bottom 0.3s ease-out !important;
-  }
 
   /* Ensure welcome screen fills available space */
   .welcome-screen {
