@@ -61,27 +61,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         setIsKeyboardOpen(keyboardOpen);
         
         if (keyboardOpen) {
-          // Calculate keyboard height and move input up
+          // Calculate keyboard height for positioning
           const calculatedKeyboardHeight = heightDifference;
           setKeyboardHeight(calculatedKeyboardHeight);
-          
-          // Move the input up by the keyboard height
-          if (textareaRef.current) {
-            const inputContainer = textareaRef.current.closest('footer');
-            if (inputContainer) {
-              inputContainer.style.transform = `translateY(-${calculatedKeyboardHeight}px)`;
-              inputContainer.style.transition = 'transform 0.3s ease-out';
-            }
-          }
         } else {
-          // Reset transform when keyboard closes
+          // Reset keyboard height when keyboard closes
           setKeyboardHeight(0);
-          if (textareaRef.current) {
-            const inputContainer = textareaRef.current.closest('footer');
-            if (inputContainer) {
-              inputContainer.style.transform = 'translateY(0)';
-            }
-          }
         }
       } else {
         // Browser mode - use visual viewport API
@@ -125,15 +110,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             setIsKeyboardOpen(true);
             const heightDifference = initialViewportHeight - currentHeight;
             setKeyboardHeight(heightDifference);
-            
-            // Move input up immediately on focus
-            if (textareaRef.current) {
-              const inputContainer = textareaRef.current.closest('footer');
-              if (inputContainer) {
-                inputContainer.style.transform = `translateY(-${heightDifference}px)`;
-                inputContainer.style.transition = 'transform 0.3s ease-out';
-              }
-            }
           }
         }, 100); // Faster response
       };
@@ -144,14 +120,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           if (currentHeight >= initialViewportHeight - 50) {
             setIsKeyboardOpen(false);
             setKeyboardHeight(0);
-            
-            // Reset input position
-            if (textareaRef.current) {
-              const inputContainer = textareaRef.current.closest('footer');
-              if (inputContainer) {
-                inputContainer.style.transform = 'translateY(0)';
-              }
-            }
           }
         }, 300);
       };
@@ -223,8 +191,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       className={`flex flex-col h-screen w-full mx-auto relative z-10 transition-all duration-300 ${isKeyboardOpen ? (isPWA ? 'pwa-keyboard-open' : 'pb-0') : ''}`} 
       style={{ 
         height: 'calc(var(--vh, 1vh) * 100)',
-        transform: isKeyboardOpen && isPWA ? `translateY(-${keyboardHeight}px)` : 'translateY(0)',
-        transition: 'transform 0.3s ease-out'
+        paddingBottom: isKeyboardOpen && isPWA ? `${keyboardHeight}px` : '0px',
+        transition: 'padding-bottom 0.3s ease-out'
       }}
     >
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass sticky top-0 z-20">
@@ -296,7 +264,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      <footer className={`p-3 sm:p-4 glass border-t border-border transition-all duration-300 ${isKeyboardOpen ? (isPWA ? 'pwa-keyboard-footer' : 'sticky bottom-0 z-30') : ''}`}>
+      <footer 
+        className={`p-3 sm:p-4 glass border-t border-border transition-all duration-300 ${isKeyboardOpen ? (isPWA ? 'pwa-keyboard-footer above-keyboard' : 'sticky bottom-0 z-30') : ''}`}
+        style={{
+          '--keyboard-height': isKeyboardOpen && isPWA ? `${keyboardHeight}px` : '0px',
+          position: isKeyboardOpen && isPWA ? 'fixed' : 'relative',
+          bottom: isKeyboardOpen && isPWA ? `${keyboardHeight}px` : 'auto',
+          left: isKeyboardOpen && isPWA ? '0' : 'auto',
+          right: isKeyboardOpen && isPWA ? '0' : 'auto',
+          zIndex: isKeyboardOpen && isPWA ? 1001 : 'auto'
+        } as React.CSSProperties}
+      >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">
             <textarea

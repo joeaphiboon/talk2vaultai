@@ -93,7 +93,7 @@ html, body {
   }
 
   .pwa-keyboard-footer {
-    position: fixed;
+    position: fixed !important;
     bottom: 0;
     left: 0;
     right: 0;
@@ -102,7 +102,14 @@ html, body {
     backdrop-filter: blur(12px);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     transform: translateY(0);
-    transition: transform 0.3s ease-out;
+    transition: all 0.3s ease-out;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Position footer above keyboard */
+  .pwa-keyboard-footer.above-keyboard {
+    bottom: var(--keyboard-height, 0px);
+    transform: translateY(0);
   }
 
   /* Ensure input stays above keyboard in PWA */
