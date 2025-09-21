@@ -3,6 +3,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, Settings, VaultFile } from './types';
 import ChatInterface from './components/ChatInterface';
 import SettingsModal from './components/SettingsModal';
+import InstallPrompt from './components/InstallPrompt';
 import { getStreamingResponse } from './services/geminiService';
 import { readFilesFromInput } from './services/fileService';
 import { loadSettings, saveSettings, clearSettings, loadVaultFiles, saveVaultFiles } from './services/storageService';
@@ -47,6 +48,12 @@ const App: React.FC = () => {
     });
     setVaultFiles([]);
     setMessages([]);
+    setError('');
+  };
+
+  const handleClearConversation = () => {
+    setMessages([]);
+    setCurrentAiResponse('');
     setError('');
   };
 
@@ -127,6 +134,7 @@ const App: React.FC = () => {
         error={error}
         onSubmit={handleSubmitMessage}
         onSettingsClick={() => setIsSettingsModalOpen(true)}
+        onClearConversation={handleClearConversation}
         vaultFileCount={vaultFiles.length}
       />
       {isSettingsModalOpen && (
@@ -138,6 +146,7 @@ const App: React.FC = () => {
           onClear={handleClearSettings}
         />
       )}
+      <InstallPrompt />
     </div>
   );
 };

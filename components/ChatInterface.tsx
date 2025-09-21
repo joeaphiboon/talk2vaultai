@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '../types';
 import Message from './Message';
-import { SendIcon, MicIcon, SettingsIcon, BrainCircuitIcon } from './Icons';
+import { SendIcon, MicIcon, SettingsIcon, BrainCircuitIcon, ClearIcon } from './Icons';
 import useSpeechToText from '../hooks/useSpeechToText';
 
 interface ChatInterfaceProps {
@@ -13,6 +13,7 @@ interface ChatInterfaceProps {
   vaultFileCount: number;
   onSubmit: (prompt: string) => void;
   onSettingsClick: () => void;
+  onClearConversation: () => void;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -23,6 +24,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   vaultFileCount,
   onSubmit,
   onSettingsClick,
+  onClearConversation,
 }) => {
   const [prompt, setPrompt] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -68,9 +70,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           <span className="text-xs sm:text-sm text-text-secondary hidden sm:block">{vaultFileCount} notes</span>
+          {messages.length > 0 && (
+            <button 
+              onClick={onClearConversation}
+              className="text-text-secondary hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-400/10"
+              title="Clear conversation"
+            >
+              <ClearIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+          )}
           <button 
             onClick={onSettingsClick} 
             className="text-text-secondary hover:text-accent transition-colors p-1 rounded-lg hover:bg-accent/10"
+            title="Settings"
           >
             <SettingsIcon className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
