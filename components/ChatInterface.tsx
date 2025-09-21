@@ -226,9 +226,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div 
-      className="flex flex-col h-screen w-full mx-auto relative z-10"
+      className={`flex flex-col h-screen w-full mx-auto relative z-10 ${isPWA ? 'pwa-container' : ''}`}
       style={{ 
-        height: 'calc(var(--vh, 1vh) * 100)'
+        height: 'calc(var(--vh, 1vh) * 100)',
+        position: isPWA ? 'fixed' : 'relative',
+        top: isPWA ? '0' : 'auto',
+        left: isPWA ? '0' : 'auto',
+        right: isPWA ? '0' : 'auto',
+        bottom: isPWA ? '0' : 'auto'
       }}
     >
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass fixed top-0 left-0 right-0 z-20">
@@ -267,7 +272,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         style={{ 
           minHeight: 0,
           marginTop: '60px', // Account for fixed header
-          marginBottom: isKeyboardOpen ? `${inputOffset}px` : '80px' // Account for fixed footer + keyboard offset
+          marginBottom: isKeyboardOpen ? `${inputOffset}px` : '80px', // Account for fixed footer + keyboard offset
+          position: isPWA ? 'absolute' : 'relative',
+          top: isPWA ? '60px' : 'auto',
+          left: isPWA ? '0' : 'auto',
+          right: isPWA ? '0' : 'auto',
+          bottom: isPWA ? (isKeyboardOpen ? `${inputOffset}px` : '80px') : 'auto',
+          height: isPWA ? `calc(100vh - 60px - ${isKeyboardOpen ? inputOffset : 80}px)` : 'auto'
         }}
       >
         {messages.length === 0 && !currentAiResponse ? (
@@ -310,8 +321,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <footer 
         className="p-3 sm:p-4 glass border-t border-border fixed bottom-0 left-0 right-0 z-30"
         style={{
-          transform: isKeyboardOpen ? `translateY(-${keyboardHeight}px)` : 'translateY(0)',
-          transition: 'transform 0.3s ease-out'
+          position: 'fixed',
+          bottom: isKeyboardOpen ? `${keyboardHeight}px` : '0px',
+          left: '0',
+          right: '0',
+          zIndex: 30,
+          transition: 'bottom 0.3s ease-out',
+          transform: 'none' // Remove transform, use bottom positioning instead
         }}
       >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
@@ -327,6 +343,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               }}
               onFocus={() => {
                 console.log('Textarea focused');
+                
+                // Prevent default mobile behavior that moves input to middle
+                if (isPWA) {
+                  // Prevent the browser from scrolling the input into view
+                  setTimeout(() => {
+                    window.scrollTo(0, 0);
+                    if (textareaRef.current) {
+                      textareaRef.current.scrollIntoView = () => {}; // Disable scrollIntoView
+                    }
+                  }, 0);
+                }
+                
                 // Force keyboard detection on focus
                 setTimeout(() => {
                   const currentHeight = window.visualViewport?.height || window.innerHeight;
