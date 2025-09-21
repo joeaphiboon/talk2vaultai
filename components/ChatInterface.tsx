@@ -33,6 +33,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [isPWA, setIsPWA] = useState(false);
   const [initialViewportHeight, setInitialViewportHeight] = useState(0);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [inputOffset, setInputOffset] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -58,8 +59,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       
       if (keyboardOpen) {
         setKeyboardHeight(heightDifference);
+        // Calculate a more reasonable offset - just enough to clear the keyboard
+        // Use a smaller offset that positions input just above keyboard
+        const reasonableOffset = Math.min(heightDifference * 0.7, heightDifference - 20);
+        setInputOffset(reasonableOffset);
       } else {
         setKeyboardHeight(0);
+        setInputOffset(0);
       }
       
       // Update CSS custom property for viewport height
@@ -93,6 +99,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         if (heightDiff > 30) {
           setIsKeyboardOpen(true);
           setKeyboardHeight(heightDiff);
+          const reasonableOffset = Math.min(heightDiff * 0.7, heightDiff - 20);
+          setInputOffset(reasonableOffset);
         }
       }, 100);
     };
@@ -104,6 +112,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         if (heightDiff <= 30) {
           setIsKeyboardOpen(false);
           setKeyboardHeight(0);
+          setInputOffset(0);
         }
       }, 300);
     };
@@ -171,7 +180,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       className="flex flex-col h-screen w-full mx-auto relative z-10"
       style={{ 
         height: 'calc(var(--vh, 1vh) * 100)',
-        paddingBottom: isKeyboardOpen ? `${keyboardHeight}px` : '0px',
+        paddingBottom: isKeyboardOpen ? `${inputOffset + 20}px` : '0px', // Use calculated offset + small buffer
         transition: 'padding-bottom 0.3s ease-out'
       }}
     >
@@ -248,11 +257,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         className="p-3 sm:p-4 glass border-t border-border sticky bottom-0 z-30"
         style={{
           position: isKeyboardOpen ? 'fixed' : 'sticky',
-          bottom: isKeyboardOpen ? `${keyboardHeight}px` : '0',
+          bottom: isKeyboardOpen ? '0' : '0',
           left: isKeyboardOpen ? '0' : 'auto',
           right: isKeyboardOpen ? '0' : 'auto',
           zIndex: 1001,
-          transition: 'all 0.3s ease-out'
+          transition: 'all 0.3s ease-out',
+          transform: isKeyboardOpen ? `translateY(-${inputOffset}px)` : 'translateY(0)'
         }}
       >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
