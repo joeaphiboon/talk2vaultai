@@ -40,7 +40,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   useEffect(scrollToBottom, [messages, currentAiResponse]);
 
-  // Auto-focus textarea after AI response completes or when welcome screen is showing
+  // Auto-focus textarea after AI response completes
   useEffect(() => {
     if (!currentAiResponse && messages.length > 0) {
       // AI response just completed, focus textarea after a short delay
@@ -51,18 +51,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }, 500);
     }
   }, [currentAiResponse, messages.length]);
-
-  // Auto-focus textarea when welcome screen is showing (no messages)
-  useEffect(() => {
-    if (messages.length === 0 && !currentAiResponse) {
-      // Welcome screen is showing, focus textarea after a short delay
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-        }
-      }, 1000);
-    }
-  }, [messages.length, currentAiResponse]);
 
 
   // Reset textarea height when prompt is cleared
@@ -152,15 +140,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      <footer 
-        className="p-3 sm:p-4 glass border-t border-border fixed bottom-0 left-0 right-0 z-30"
-        onClick={() => {
-          // Focus textarea when footer is clicked
-          if (textareaRef.current) {
-            textareaRef.current.focus();
-          }
-        }}
-      >
+      <footer className="p-3 sm:p-4 glass border-t border-border fixed bottom-0 left-0 right-0 z-30">
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">
             <textarea
@@ -174,15 +154,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               }}
               onClick={() => {
                 // Ensure textarea gets focused when clicked
-                console.log('Textarea clicked, focusing...');
                 if (textareaRef.current) {
                   textareaRef.current.focus();
-                  // Force focus with a slight delay to ensure it works
-                  setTimeout(() => {
-                    if (textareaRef.current) {
-                      textareaRef.current.focus();
-                    }
-                  }, 100);
                 }
               }}
               onFocus={() => {
