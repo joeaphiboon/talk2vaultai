@@ -11,6 +11,9 @@ export default defineConfig({
   ],
   theme: {
     extend: {
+      height: {
+        screen: '100dvh',
+      },
       colors: {
         'primary': '#0f0f23',
         'secondary': '#1a1a2e',
