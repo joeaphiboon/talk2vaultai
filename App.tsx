@@ -127,7 +127,7 @@ const App: React.FC = () => {
   }, [isLoading, vaultFiles, settings.apiKey]);
 
   return (
-    <div className="bg-primary text-text-primary min-h-screen flex flex-col font-sans">
+    <div className="bg-primary text-text-primary h-screen flex flex-col font-sans" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       <ChatInterface
         messages={messages}
         currentAiResponse={currentAiResponse}

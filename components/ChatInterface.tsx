@@ -28,6 +28,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [prompt, setPrompt] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { isListening, transcript, startListening, stopListening, isInterim } = useSpeechToText({ 
     autoDetectLanguage: true 
   });
@@ -43,6 +44,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   useEffect(scrollToBottom, [messages, currentAiResponse]);
+
+  // Reset textarea height when prompt is cleared
+  useEffect(() => {
+    if (!prompt && textareaRef.current) {
+      textareaRef.current.style.height = '40px';
+    }
+  }, [prompt]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +70,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-screen max-h-screen w-full mx-auto">
+    <div className="flex flex-col h-screen w-full mx-auto" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       <header className="flex justify-between items-center p-3 sm:p-4 border-b border-secondary bg-primary/95 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center gap-2 sm:gap-3">
           <BrainCircuitIcon className="h-6 w-6 sm:h-8 sm:w-8 text-accent" />
@@ -89,7 +97,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 sm:space-y-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 sm:space-y-6" style={{ minHeight: 0 }}>
         {messages.map((msg, index) => (
           <Message key={index} role={msg.role} content={msg.content} />
         ))}
@@ -110,8 +118,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <form onSubmit={handleSubmit} className="flex items-end gap-2 bg-secondary rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent transition-shadow">
           <div className="flex-1 min-w-0">
             <textarea
+              ref={textareaRef}
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => {
+                setPrompt(e.target.value);
+                // Auto-resize textarea
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -119,7 +133,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }
               }}
               placeholder="ถามคำถามเกี่ยวกับบันทึกของคุณ... (Ask a question about your notes...)"
-              className="w-full bg-transparent p-2 text-text-primary placeholder-text-secondary focus:outline-none resize-none max-h-32 text-sm sm:text-base"
+              className="w-full bg-transparent p-2 text-text-primary placeholder-text-secondary focus:outline-none resize-none text-sm sm:text-base leading-relaxed"
+              style={{ 
+                minHeight: '40px', 
+                maxHeight: '120px',
+                height: '40px'
+              }}
               rows={1}
               disabled={isLoading}
             />
