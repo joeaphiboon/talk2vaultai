@@ -187,11 +187,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   useEffect(scrollToBottom, [messages, currentAiResponse]);
 
-  // Auto-scroll when keyboard opens
+  // Auto-scroll when keyboard opens and manage body scroll
   useEffect(() => {
     if (isKeyboardOpen) {
+      // Prevent body scroll when keyboard is open
+      document.body.classList.add('mobile-keyboard-open');
       setTimeout(scrollToBottom, 100); // Small delay to ensure layout is updated
+    } else {
+      // Allow body scroll when keyboard is closed
+      document.body.classList.remove('mobile-keyboard-open');
     }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('mobile-keyboard-open');
+    };
   }, [isKeyboardOpen]);
 
   // Reset textarea height when prompt is cleared
@@ -211,7 +221,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
 
   return (
-    <div className="w-full h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/50">
+    <div 
+      className="w-full h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/50 app-container"
+      style={{
+        height: '100vh',
+        height: 'calc(var(--vh, 1vh) * 100)',
+        overflow: 'hidden',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0
+      }}
+    >
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass fixed top-0 left-0 right-0 z-20">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="p-1.5 bg-gradient-accent rounded-lg shadow-glow">
