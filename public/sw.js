@@ -1,4 +1,4 @@
-const CACHE_NAME = 'talk2myvault-v1';
+const CACHE_NAME = 'talk2myvault-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -29,15 +29,24 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        // Return cached version or fetch from network
-        if (response) {
-          return response;
+        // If successful, cache the response
+        if (response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
         }
-        
-        return fetch(event.request).catch(() => {
-          // If network fails and no cache, return offline page for navigation requests
+        return response;
+      })
+      .catch(() => {
+        // If network fails, try to serve from cache
+        return caches.match(event.request).then((response) => {
+          if (response) {
+            return response;
+          }
+          // If no cache and navigation request, return index.html
           if (event.request.mode === 'navigate') {
             return caches.match('/index.html');
           }

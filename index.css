@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Mobile viewport height fix */
 :root {
   --vh: 1vh;
