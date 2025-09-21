@@ -28,145 +28,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onClearConversation,
 }) => {
   const [prompt, setPrompt] = useState('');
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const scrollToTop = () => {
-    const mainElement = document.querySelector('main');
-    if (mainElement) {
-      mainElement.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  // Track if user has manually scrolled up
-  const [userScrolledUp, setUserScrolledUp] = useState(false);
-  
-  // PWA detection
-  const [isPWA, setIsPWA] = useState(false);
-
-  // Auto-scroll to bottom when new messages are added
   useEffect(() => {
-    if (messages.length > 0) {
-      scrollToBottom();
-      setUserScrolledUp(false); // Reset scroll state when new message added
-    }
-  }, [messages.length]);
-
-  // Auto-scroll during AI streaming (always follow the response)
-  useEffect(() => {
-    if (currentAiResponse && !userScrolledUp) {
-      scrollToBottom();
-    }
-  }, [currentAiResponse, userScrolledUp]);
-
-  // Auto-focus on AI response when it starts
-  useEffect(() => {
-    if (currentAiResponse && textareaRef.current) {
-      // Blur input to hide keyboard and focus on AI response
-      textareaRef.current.blur();
-      scrollToBottom();
-    }
-  }, [currentAiResponse]);
-
-  // Apply keyboard-open class to body for PWA
-  useEffect(() => {
-    if (isPWA && isKeyboardOpen) {
-      document.body.classList.add('keyboard-open');
-    } else {
-      document.body.classList.remove('keyboard-open');
-    }
-    
-    return () => {
-      document.body.classList.remove('keyboard-open');
-    };
-  }, [isPWA, isKeyboardOpen]);
-
-  // Track manual scrolling
-  useEffect(() => {
-    const mainElement = document.querySelector('main');
-    if (!mainElement) return;
-
-    const handleScroll = () => {
-      const isNearBottom = mainElement.scrollTop + mainElement.clientHeight >= mainElement.scrollHeight - 100;
-      setUserScrolledUp(!isNearBottom);
-    };
-
-    mainElement.addEventListener('scroll', handleScroll);
-    return () => mainElement.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // PWA detection
-  useEffect(() => {
-    const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
-                     (window.navigator as any).standalone === true ||
-                     document.referrer.includes('android-app://');
-    setIsPWA(isPWAMode);
-  }, []);
-
-  // Keyboard detection
-  useEffect(() => {
-    const updateViewportHeight = () => {
-      const height = window.visualViewport?.height || window.innerHeight;
-      const fullHeight = window.innerHeight;
-      const heightDifference = fullHeight - height;
-      
-      // Detect keyboard state with PWA-specific threshold
-      const keyboardThreshold = isPWA ? 100 : 150;
-      const keyboardOpen = heightDifference > keyboardThreshold;
-      setIsKeyboardOpen(keyboardOpen);
-      setKeyboardHeight(keyboardOpen ? heightDifference : 0);
-      
-      // If keyboard just opened, ensure input is visible
-      if (keyboardOpen && textareaRef.current) {
-        setTimeout(() => {
-          if (textareaRef.current) {
-            textareaRef.current.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-          }
-        }, 100);
-      }
-    };
-
-    updateViewportHeight();
-
-    // Listen for viewport changes (keyboard show/hide)
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateViewportHeight);
-    } else {
-      window.addEventListener('resize', updateViewportHeight);
-    }
-
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateViewportHeight);
-      }
-      window.removeEventListener('resize', updateViewportHeight);
-    };
-  }, [isPWA]); // Add isPWA dependency for PWA-specific behavior
+    scrollToBottom();
+  }, [messages, currentAiResponse]);
 
   // Auto-focus textarea after AI response completes
   useEffect(() => {
-    if (!currentAiResponse && messages.length > 0) {
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-        }
-      }, 500);
+    if (!isLoading && messages.length > 0) {
+      textareaRef.current?.focus();
     }
-  }, [currentAiResponse, messages.length]);
-
+  }, [isLoading, messages.length]);
+  
   // Reset textarea height when prompt is cleared
   useEffect(() => {
     if (!prompt && textareaRef.current) {
-      textareaRef.current.style.height = '36px';
+      textareaRef.current.style.height = 'auto';
     }
   }, [prompt]);
 
@@ -175,39 +58,31 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (prompt.trim()) {
       onSubmit(prompt);
       setPrompt('');
-      
-      // Hide keyboard and focus on AI response
-      if (textareaRef.current) {
-        textareaRef.current.blur(); // Hide keyboard
-      }
-      
-      // Force focus on AI response and follow to end
-      setUserScrolledUp(false);
-      setTimeout(() => {
-        scrollToBottom();
-      }, 100);
     }
   };
 
   const handleTextareaFocus = () => {
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-      // Smooth scroll to input area
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'end' 
-          });
-        }
-      }, 100);
+    textareaRef.current?.focus();
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* 1. Header */}vent) => {
+    e.preventDefault();
+    if (prompt.trim()) {
+      onSubmit(prompt);
+      setPrompt('');
     }
+  };
+
+  const handleTextareaFocus = () => {
+    textareaRef.current?.focus();
   };
 
   return (
     <div className="h-screen flex flex-col">
-      {/* 1. Header - Fixed */}
-      <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass fixed top-0 left-0 right-0 z-20">
+      {/* 1. Header */}
+      <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass z-20">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="p-1.5 bg-gradient-accent rounded-lg shadow-glow">
             <AppIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -239,14 +114,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </header>
 
       {/* 2. Content Area - Scrollable */}
-      <main 
-        className="flex-1 overflow-y-auto"
-        style={{
-          height: 'calc(100vh - 60px - 80px)',
-          marginTop: '60px', // Push content below header, no overlap
-          paddingBottom: isKeyboardOpen ? `${isPWA ? Math.max(keyboardHeight + 40, 80) : Math.max(keyboardHeight + 60, 80)}px` : '80px'
-        }}
-      >
+      <main className="flex-1 overflow-y-auto">
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
@@ -283,13 +151,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         )}
       </main>
 
-      {/* 3. Text Input - Fixed */}
+      {/* 3. Text Input */}
       <footer 
-        className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30 cursor-pointer"
-        style={{
-          bottom: isKeyboardOpen ? `${isPWA ? Math.max(keyboardHeight - 5, 0) : Math.max(keyboardHeight - 10, 0)}px` : '0px',
-          transition: 'bottom 0.2s ease-out'
-        }}
+        className="p-3 sm:p-4 glass border-t border-border z-30"
         onClick={handleTextareaFocus}
       >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
@@ -304,7 +168,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
               }}
               onFocus={handleTextareaFocus}
-              onClick={handleTextareaFocus}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();

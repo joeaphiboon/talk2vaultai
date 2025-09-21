@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ChatMessage, Settings, VaultFile } from './types';
 import ChatInterface from './components/ChatInterface';
 import SettingsModal from './components/SettingsModal';
@@ -19,6 +19,33 @@ const App: React.FC = () => {
   const [currentAiResponse, setCurrentAiResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const appRef = useRef<HTMLDivElement>(null);
+
+  // Mobile viewport height fix
+  useEffect(() => {
+    const setViewportHeight = () => {
+      if (appRef.current) {
+        const vh = window.innerHeight * 0.01;
+        appRef.current.style.setProperty('--vh', `${vh}px`);
+        appRef.current.style.height = `${window.innerHeight}px`;
+      }
+    };
+
+    const visualViewport = window.visualViewport;
+    if (visualViewport) {
+      visualViewport.addEventListener('resize', setViewportHeight);
+    }
+
+    setViewportHeight();
+
+    return () => {
+      if (visualViewport) {
+        visualViewport.removeEventListener('resize', setViewportHeight);
+      }
+    };
+  }, []);
+
+
   // Load settings and vault files from localStorage on component mount
   useEffect(() => {
     const savedSettings = loadSettings();
@@ -97,7 +124,8 @@ const App: React.FC = () => {
 
     // Simple RAG: concatenate all file content.
     // For a real app, you'd use vector search to find relevant chunks.
-    const context = vaultFiles.map(file => `--- NOTE: ${file.name} ---\n${file.content}`).join('\n\n');
+    const context = vaultFiles.map(file => `--- NOTE: ${file.name} ---
+${file.content}`).join('\n\n');
 
     try {
       const stream = await getStreamingResponse(prompt, context, settings.apiKey);
@@ -125,7 +153,7 @@ const App: React.FC = () => {
   }, [isLoading, vaultFiles, settings.apiKey]);
 
   return (
-    <div className="bg-gradient-to-br from-background via-background to-background/50 text-text-primary h-screen flex flex-col font-sans relative overflow-hidden">
+    <div ref={appRef} className="bg-gradient-to-br from-background via-background to-background/50 text-text-primary flex flex-col font-sans relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-0 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse"></div>
