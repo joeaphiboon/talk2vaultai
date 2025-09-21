@@ -68,6 +68,17 @@ html, body {
     height: 100vh;
     height: calc(var(--vh, 1vh) * 100);
   }
+
+  /* Better mobile keyboard handling */
+  .mobile-keyboard-open {
+    height: calc(var(--vh, 1vh) * 100) !important;
+  }
+
+  /* Ensure input stays visible when keyboard is open */
+  input:focus, textarea:focus {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
 }
 
 /* Prevent zoom on input focus */

@@ -49,10 +49,12 @@ const useSpeechToText = (options: SpeechToTextOptions = {}): SpeechToTextResult 
 
     recognition.continuous = true;
     recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
     
-    // Support both Thai and English
+    // Support both Thai and English with better configuration
     if (options.autoDetectLanguage) {
-      recognition.lang = 'th-TH,en-US'; // Try Thai first, fallback to English
+      // Use a more comprehensive language list for better detection
+      recognition.lang = 'th-TH,en-US,en-GB,en-AU'; // Thai first, then multiple English variants
     } else {
       recognition.lang = options.lang || 'en-US';
     }
@@ -63,24 +65,29 @@ const useSpeechToText = (options: SpeechToTextOptions = {}): SpeechToTextResult 
       
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         const result = event.results[i];
-        const transcript = result[0].transcript;
+        const transcript = result[0].transcript.trim();
         
         if (result.isFinal) {
-          finalTranscript += transcript;
+          finalTranscript += transcript + ' ';
           setIsInterim(false);
         } else {
-          interimTranscript += transcript;
+          interimTranscript = transcript;
           setIsInterim(true);
         }
       }
       
+      // Update transcript with final results and current interim
       if (finalTranscript) {
-        setTranscript(t => t + finalTranscript);
+        setTranscript(prev => prev + finalTranscript);
       }
       
-      // Update interim transcript for real-time display
+      // Show interim results in real-time
       if (interimTranscript) {
-        setTranscript(t => t + interimTranscript);
+        setTranscript(prev => {
+          // Remove previous interim results and add new ones
+          const withoutInterim = prev.replace(/\s*\[.*?\]\s*$/, '');
+          return withoutInterim + (interimTranscript ? ` [${interimTranscript}]` : '');
+        });
       }
     };
 
@@ -91,6 +98,25 @@ const useSpeechToText = (options: SpeechToTextOptions = {}): SpeechToTextResult 
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error', event.error);
       setIsListening(false);
+      
+      // Auto-restart on certain errors for better user experience
+      if (event.error === 'no-speech' || event.error === 'audio-capture') {
+        setTimeout(() => {
+          if (recognitionRef.current && !isListening) {
+            try {
+              recognitionRef.current.start();
+              setIsListening(true);
+            } catch (error) {
+              console.error('Error restarting speech recognition:', error);
+            }
+          }
+        }, 1000);
+      }
+    };
+
+    recognition.onstart = () => {
+      console.log('Speech recognition started');
+      setIsListening(true);
     };
 
     return () => {

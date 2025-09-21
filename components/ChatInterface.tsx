@@ -30,6 +30,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onClearConversation,
 }) => {
   const [prompt, setPrompt] = useState('');
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { isListening, transcript, startListening, stopListening, isInterim } = useSpeechToText({ 
@@ -41,12 +42,54 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setPrompt(transcript);
     }
   }, [transcript]);
+
+  // Mobile keyboard detection and viewport handling
+  useEffect(() => {
+    const handleResize = () => {
+      const initialViewportHeight = window.visualViewport?.height || window.innerHeight;
+      const currentViewportHeight = window.visualViewport?.height || window.innerHeight;
+      const heightDifference = initialViewportHeight - currentViewportHeight;
+      
+      // Consider keyboard open if viewport height decreased by more than 150px
+      const keyboardOpen = heightDifference > 150;
+      setIsKeyboardOpen(keyboardOpen);
+      
+      // Update CSS custom property for viewport height
+      const vh = currentViewportHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    // Listen for viewport changes (mobile keyboard)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+    } else {
+      window.addEventListener('resize', handleResize);
+    }
+
+    // Initial setup
+    handleResize();
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+      } else {
+        window.removeEventListener('resize', handleResize);
+      }
+    };
+  }, []);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(scrollToBottom, [messages, currentAiResponse]);
+
+  // Auto-scroll when keyboard opens
+  useEffect(() => {
+    if (isKeyboardOpen) {
+      setTimeout(scrollToBottom, 100); // Small delay to ensure layout is updated
+    }
+  }, [isKeyboardOpen]);
 
   // Reset textarea height when prompt is cleared
   useEffect(() => {
@@ -73,7 +116,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-screen w-full mx-auto relative z-10" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+    <div className={`flex flex-col h-screen w-full mx-auto relative z-10 transition-all duration-300 ${isKeyboardOpen ? 'pb-0' : ''}`} style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass sticky top-0 z-20">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="p-1.5 bg-gradient-accent rounded-lg shadow-glow">
@@ -105,7 +148,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto relative" style={{ minHeight: 0 }}>
+      <main className={`flex-1 overflow-y-auto relative transition-all duration-300 ${isKeyboardOpen ? 'pb-2' : ''}`} style={{ minHeight: 0 }}>
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
@@ -143,7 +186,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      <footer className="p-3 sm:p-4 glass border-t border-border">
+      <footer className={`p-3 sm:p-4 glass border-t border-border transition-all duration-300 ${isKeyboardOpen ? 'sticky bottom-0 z-30' : ''}`}>
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">
             <textarea
@@ -154,6 +197,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 // Auto-resize textarea
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+              }}
+              onFocus={() => {
+                // Ensure textarea is visible when focused
+                setTimeout(() => {
+                  if (textareaRef.current) {
+                    textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }
+                }, 300);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
