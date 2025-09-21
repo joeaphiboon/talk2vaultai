@@ -91,9 +91,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     };
   }, []);
 
-  // Apply keyboard-open class to body when keyboard is open
+  // Apply keyboard-open class to body when keyboard is open and in chat content
   useEffect(() => {
-    if (isKeyboardOpen) {
+    if (isKeyboardOpen && messages.length > 0) {
       document.body.classList.add('keyboard-open');
     } else {
       document.body.classList.remove('keyboard-open');
@@ -102,7 +102,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return () => {
       document.body.classList.remove('keyboard-open');
     };
-  }, [isKeyboardOpen]);
+  }, [isKeyboardOpen, messages.length]);
 
   // Auto-focus textarea after AI response completes
   useEffect(() => {
@@ -157,7 +157,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       className="w-full h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/50"
       style={{
         height: 'calc(var(--vh, 1vh) * 100)',
-        transform: isKeyboardOpen ? `translateY(-${Math.min(keyboardHeight * 0.5, keyboardHeight - 100)}px)` : 'none',
+        transform: (isKeyboardOpen && messages.length > 0) ? `translateY(-${Math.min(keyboardHeight * 0.5, keyboardHeight - 100)}px)` : 'none',
         transition: 'transform 0.3s ease-out'
       }}
     >
@@ -197,7 +197,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         style={{
           height: 'calc(var(--vh, 1vh) * 100 - 60px - 80px)',
           minHeight: 'calc(var(--vh, 1vh) * 100 - 60px - 80px)',
-          paddingBottom: isKeyboardOpen ? `${Math.min(keyboardHeight * 0.1, 100)}px` : '80px'
+          paddingBottom: (isKeyboardOpen && messages.length > 0) ? `${Math.min(keyboardHeight * 0.1, 100)}px` : '80px'
         }}
       >
         {messages.length === 0 && !currentAiResponse ? (
@@ -240,7 +240,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <footer 
         className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30"
         style={{
-          bottom: isKeyboardOpen ? `${Math.min(keyboardHeight * 0.2, keyboardHeight - 50)}px` : '0px',
+          bottom: (isKeyboardOpen && messages.length > 0) ? `${Math.min(keyboardHeight * 0.2, keyboardHeight - 50)}px` : '0px',
           transition: 'bottom 0.3s ease-out'
         }}
       >
