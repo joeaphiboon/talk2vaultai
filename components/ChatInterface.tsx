@@ -46,8 +46,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                      document.referrer.includes('android-app://');
     setIsPWA(isPWAMode);
 
+    // Detect mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log('Device detection:', { isPWAMode, isMobile, userAgent: navigator.userAgent });
+
     let initialHeight = window.visualViewport?.height || window.innerHeight;
     setInitialViewportHeight(initialHeight);
+    console.log('Initial height set:', initialHeight);
 
     const handleResize = () => {
       const currentHeight = window.visualViewport?.height || window.innerHeight;
@@ -55,14 +60,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       
       // More sensitive detection for mobile
       const keyboardOpen = heightDifference > 50;
+      console.log('Keyboard detection:', { 
+        initialHeight, 
+        currentHeight, 
+        heightDifference, 
+        keyboardOpen,
+        isPWA: isPWAMode 
+      });
+      
       setIsKeyboardOpen(keyboardOpen);
       
       if (keyboardOpen) {
         setKeyboardHeight(heightDifference);
-        setInputOffset(heightDifference); // Use full keyboard height for proper positioning
+        setInputOffset(heightDifference);
+        console.log('Keyboard opened, height:', heightDifference);
       } else {
         setKeyboardHeight(0);
         setInputOffset(0);
+        console.log('Keyboard closed');
       }
       
       // Update CSS custom property for viewport height
@@ -73,8 +88,40 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     // Listen for viewport changes
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleResize);
+      console.log('Added visualViewport listener');
     } else {
       window.addEventListener('resize', handleResize);
+      console.log('Added window resize listener');
+    }
+    
+    // Also listen to window resize as backup
+    window.addEventListener('resize', handleResize);
+    
+    // Add a more aggressive mobile detection
+    if (isMobile) {
+      // For mobile, also listen to orientation change and window resize
+      const handleMobileResize = () => {
+        setTimeout(() => {
+          const currentHeight = window.visualViewport?.height || window.innerHeight;
+          const heightDiff = initialHeight - currentHeight;
+          console.log('Mobile resize check:', { currentHeight, heightDiff, initialHeight });
+          
+          if (heightDiff > 50) {
+            console.log('Mobile keyboard detected');
+            setIsKeyboardOpen(true);
+            setKeyboardHeight(heightDiff);
+            setInputOffset(heightDiff);
+          } else if (heightDiff <= 20) {
+            console.log('Mobile keyboard closed');
+            setIsKeyboardOpen(false);
+            setKeyboardHeight(0);
+            setInputOffset(0);
+          }
+        }, 100);
+      };
+      
+      window.addEventListener('resize', handleMobileResize);
+      window.addEventListener('orientationchange', handleMobileResize);
     }
 
     // Handle orientation changes
@@ -90,27 +137,33 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     // Focus/blur handlers for better keyboard detection
     const handleInputFocus = () => {
+      console.log('Input focused');
       setTimeout(() => {
         const currentHeight = window.visualViewport?.height || window.innerHeight;
         const heightDiff = initialHeight - currentHeight;
+        console.log('Focus check:', { currentHeight, heightDiff, initialHeight });
         if (heightDiff > 30) {
+          console.log('Keyboard detected on focus');
           setIsKeyboardOpen(true);
           setKeyboardHeight(heightDiff);
           setInputOffset(heightDiff);
         }
-      }, 100);
+      }, 200); // Increased delay for mobile
     };
 
     const handleInputBlur = () => {
+      console.log('Input blurred');
       setTimeout(() => {
         const currentHeight = window.visualViewport?.height || window.innerHeight;
         const heightDiff = initialHeight - currentHeight;
+        console.log('Blur check:', { currentHeight, heightDiff, initialHeight });
         if (heightDiff <= 30) {
+          console.log('Keyboard closed on blur');
           setIsKeyboardOpen(false);
           setKeyboardHeight(0);
           setInputOffset(0);
         }
-      }, 300);
+      }, 500); // Increased delay for mobile
     };
 
     // Add focus/blur listeners
@@ -273,6 +326,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
               }}
               onFocus={() => {
+                console.log('Textarea focused');
+                // Force keyboard detection on focus
+                setTimeout(() => {
+                  const currentHeight = window.visualViewport?.height || window.innerHeight;
+                  const heightDiff = initialViewportHeight - currentHeight;
+                  console.log('Focus immediate check:', { currentHeight, heightDiff, initialViewportHeight });
+                  
+                  if (heightDiff > 30) {
+                    console.log('Keyboard detected immediately on focus');
+                    setIsKeyboardOpen(true);
+                    setKeyboardHeight(heightDiff);
+                    setInputOffset(heightDiff);
+                  }
+                }, 100);
+                
                 // Ensure textarea is visible when focused
                 if (isPWA) {
                   // More aggressive scrolling for PWA
