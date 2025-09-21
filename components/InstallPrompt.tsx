@@ -11,8 +11,26 @@ const InstallPrompt: React.FC = () => {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showManualInstall, setShowManualInstall] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Helper function to detect desktop devices
+  const isDesktopDevice = () => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    const isTablet = /ipad|android(?!.*mobile)/i.test(userAgent);
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // Consider it desktop if it's not mobile, not tablet, and either has no touch or has a large screen
+    return !isMobile && !isTablet && (!hasTouch || window.innerWidth >= 1024);
+  };
 
   useEffect(() => {
+    // Check if it's a desktop device
+    if (isDesktopDevice()) {
+      setIsDesktop(true);
+      return;
+    }
+
     // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
@@ -92,8 +110,8 @@ const InstallPrompt: React.FC = () => {
     setShowInstallPrompt(false);
   };
 
-  // Don't show if already installed
-  if (isInstalled) return null;
+  // Don't show if already installed or on desktop
+  if (isInstalled || isDesktop) return null;
 
   // Show automatic prompt if available
   if (showInstallPrompt && deferredPrompt) {
