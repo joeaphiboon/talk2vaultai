@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '../types';
 import Message from './Message';
-import { SendIcon, MicIcon, SettingsIcon, BrainCircuitIcon, ClearIcon } from './Icons';
+import { SendIcon, MicIcon, SettingsIcon, AppIcon, ClearIcon } from './Icons';
 import useSpeechToText from '../hooks/useSpeechToText';
 import WelcomeScreen from './WelcomeScreen';
 
@@ -51,7 +51,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Reset textarea height when prompt is cleared
   useEffect(() => {
     if (!prompt && textareaRef.current) {
-      textareaRef.current.style.height = '40px';
+      textareaRef.current.style.height = '36px';
     }
   }, [prompt]);
 
@@ -74,33 +74,33 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="flex flex-col h-screen w-full mx-auto relative z-10" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
-      <header className="flex justify-between items-center p-4 sm:p-6 border-b border-border glass sticky top-0 z-20">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2 bg-gradient-accent rounded-xl shadow-glow">
-            <BrainCircuitIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+      <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass sticky top-0 z-20">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="p-1.5 bg-gradient-accent rounded-lg shadow-glow">
+            <AppIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-text-primary">Talk2MyVault</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-text-primary">Talk2MyVault</h1>
         </div>
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-secondary/50 rounded-full border border-border">
-            <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-            <span className="text-sm text-text-secondary">{vaultFileCount} notes</span>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-secondary/50 rounded-lg border border-border">
+            <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse"></div>
+            <span className="text-xs text-text-secondary">{vaultFileCount} notes</span>
           </div>
           {messages.length > 0 && (
             <button 
               onClick={onClearConversation}
-              className="text-text-secondary hover:text-error transition-all duration-200 p-2 rounded-xl hover:bg-error/10 hover:shadow-glow"
+              className="text-text-secondary hover:text-error transition-all duration-200 p-1.5 rounded-lg hover:bg-error/10 hover:shadow-glow"
               title="Clear conversation"
             >
-              <ClearIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+              <ClearIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
           )}
           <button 
             onClick={onSettingsClick} 
-            className="text-text-secondary hover:text-accent transition-all duration-200 p-2 rounded-xl hover:bg-accent/10 hover:shadow-glow"
+            className="text-text-secondary hover:text-accent transition-all duration-200 p-1.5 rounded-lg hover:bg-accent/10 hover:shadow-glow"
             title="Settings"
           >
-            <SettingsIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+            <SettingsIcon className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
         </div>
       </header>
@@ -143,8 +143,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      <footer className="p-4 sm:p-6 glass border-t border-border">
-        <form onSubmit={handleSubmit} className="flex items-end gap-3 glass-card rounded-2xl p-3 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
+      <footer className="p-3 sm:p-4 glass border-t border-border">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">
             <textarea
               ref={textareaRef}
@@ -153,7 +153,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 setPrompt(e.target.value);
                 // Auto-resize textarea
                 e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -162,11 +162,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }
               }}
               placeholder={hasApiKey ? "ถามคำถามเกี่ยวกับบันทึกของคุณ... (Ask a question about your notes...)" : "Please set your API key in settings first..."}
-              className={`w-full glass-input rounded-xl p-3 text-text-primary placeholder-text-secondary focus:outline-none resize-none text-sm sm:text-base leading-relaxed transition-all duration-200 ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-full glass-input rounded-lg px-3 py-2 text-text-primary placeholder-text-secondary focus:outline-none resize-none text-sm sm:text-base leading-normal transition-all duration-200 ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
               style={{ 
-                minHeight: '48px', 
-                maxHeight: '120px',
-                height: '48px'
+                minHeight: '36px', 
+                maxHeight: '100px',
+                height: '36px'
               }}
               rows={1}
               disabled={isLoading || !hasApiKey}
@@ -178,23 +178,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             <button
               type="button"
               onClick={handleMicClick}
-              className={`p-3 rounded-xl transition-all duration-200 ${isListening ? 'bg-error text-white shadow-glow animate-pulse' : 'text-text-secondary hover:bg-accent/20 hover:text-accent hover:shadow-glow'} ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`p-2 rounded-lg transition-all duration-200 ${isListening ? 'bg-error text-white shadow-glow animate-pulse' : 'text-text-secondary hover:bg-accent/20 hover:text-accent hover:shadow-glow'} ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={isLoading || !hasApiKey}
               title={!hasApiKey ? 'Set API key first' : (isListening ? 'Stop recording' : 'Start voice input')}
             >
-              <MicIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+              <MicIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
             <button
               type="submit"
-              className={`bg-gradient-accent text-white p-3 rounded-xl hover:shadow-glow disabled:bg-text-muted disabled:cursor-not-allowed transition-all duration-200 ${!hasApiKey ? 'opacity-50' : ''}`}
+              className={`bg-gradient-accent text-white p-2 rounded-lg hover:shadow-glow disabled:bg-text-muted disabled:cursor-not-allowed transition-all duration-200 ${!hasApiKey ? 'opacity-50' : ''}`}
               disabled={isLoading || !prompt.trim() || !hasApiKey}
               title={!hasApiKey ? 'Set API key first' : 'Send message'}
             >
-              <SendIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+              <SendIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
           </div>
         </form>

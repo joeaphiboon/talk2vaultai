@@ -76,3 +76,13 @@ export const ClearIcon: React.FC<IconProps> = ({ className }) => (
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/>
     </svg>
 );
+
+export const AppIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <rect x="2" y="2" width="20" height="20" rx="3" fill="currentColor" opacity="0.1"/>
+        <rect x="5" y="5" width="6" height="6" rx="1" fill="currentColor"/>
+        <rect x="13" y="5" width="6" height="6" rx="1" fill="currentColor"/>
+        <rect x="5" y="13" width="6" height="6" rx="1" fill="currentColor"/>
+        <rect x="13" y="13" width="6" height="6" rx="1" fill="currentColor"/>
+    </svg>
+);

@@ -4,7 +4,6 @@ import { ChatMessage, Settings, VaultFile } from './types';
 import ChatInterface from './components/ChatInterface';
 import SettingsModal from './components/SettingsModal';
 import InstallPrompt from './components/InstallPrompt';
-import MobileDebug from './components/MobileDebug';
 import { getStreamingResponse } from './services/geminiService';
 import { readFilesFromInput } from './services/fileService';
 import { loadSettings, saveSettings, clearSettings, loadVaultFiles, saveVaultFiles } from './services/storageService';
@@ -155,7 +154,6 @@ const App: React.FC = () => {
         />
       )}
       <InstallPrompt />
-      <MobileDebug />
     </div>
   );
 };
