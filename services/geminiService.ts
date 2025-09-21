@@ -21,6 +21,24 @@ const initializeGemini = (apiKey: string) => {
   currentApiKey = apiKey;
 };
 
+export const verifyApiKey = async (apiKey: string): Promise<boolean> => {
+  try {
+    const testAI = new GoogleGenAI({ apiKey });
+    const testChat = testAI.chats.create({
+      model: 'gemini-2.5-flash',
+      config: {
+        systemInstruction: "You are a test assistant. Respond with 'OK' to verify the API key is working.",
+      },
+    });
+    
+    const response = await testChat.sendMessage({ message: "Test" });
+    return response.text === "OK";
+  } catch (error) {
+    console.error("API key verification failed:", error);
+    return false;
+  }
+};
+
 export const getStreamingResponse = async (
   prompt: string,
   context: string,

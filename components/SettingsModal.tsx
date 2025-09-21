@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Settings } from '../types';
 import { CloseIcon, FolderIcon } from './Icons';
+import { verifyApiKey } from '../services/geminiService';
 
 interface SettingsModalProps {
   settings: Settings;
@@ -14,12 +15,40 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onSave, onClose, onFilesSelected, onClear }) => {
   const [currentSettings, setCurrentSettings] = useState<Settings>(settings);
   const [fileName, setFileName] = useState<string>('');
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'valid' | 'invalid'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Update current settings when settings prop changes
   useEffect(() => {
     setCurrentSettings(settings);
   }, [settings]);
+
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newApiKey = e.target.value;
+    setCurrentSettings({ ...currentSettings, apiKey: newApiKey });
+    setVerificationStatus('idle');
+  };
+
+  const handleVerifyApiKey = async () => {
+    if (!currentSettings.apiKey.trim()) {
+      setVerificationStatus('invalid');
+      return;
+    }
+
+    setIsVerifying(true);
+    setVerificationStatus('verifying');
+
+    try {
+      const isValid = await verifyApiKey(currentSettings.apiKey);
+      setVerificationStatus(isValid ? 'valid' : 'invalid');
+    } catch (error) {
+      console.error('API key verification error:', error);
+      setVerificationStatus('invalid');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleSave = () => {
     onSave(currentSettings);
@@ -52,17 +81,45 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onSave, onClose
             <label htmlFor="apiKey" className="block text-base font-semibold text-text-primary mb-3">
               Gemini API Key
             </label>
-            <input
-              id="apiKey"
-              type="password"
-              value={currentSettings.apiKey}
-              onChange={(e) => setCurrentSettings({ ...currentSettings, apiKey: e.target.value })}
-              placeholder="Enter your Gemini API key"
-              className="w-full glass-input rounded-xl p-4 text-text-primary focus:outline-none text-base"
-            />
-            <p className="text-sm text-text-secondary mt-2">
-              Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline font-medium">Google AI Studio</a>
-            </p>
+            <div className="flex gap-2">
+              <input
+                id="apiKey"
+                type="password"
+                value={currentSettings.apiKey}
+                onChange={handleApiKeyChange}
+                placeholder="Enter your Gemini API key"
+                className={`flex-1 glass-input rounded-xl p-4 text-text-primary focus:outline-none text-base ${
+                  verificationStatus === 'valid' ? 'border-success' : 
+                  verificationStatus === 'invalid' ? 'border-error' : ''
+                }`}
+              />
+              <button
+                onClick={handleVerifyApiKey}
+                disabled={isVerifying || !currentSettings.apiKey.trim()}
+                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+                  verificationStatus === 'valid' 
+                    ? 'bg-success text-white' 
+                    : verificationStatus === 'invalid'
+                    ? 'bg-error text-white'
+                    : 'bg-accent text-white hover:bg-accent-hover'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {isVerifying ? 'Verifying...' : 
+                 verificationStatus === 'valid' ? '✓ Valid' :
+                 verificationStatus === 'invalid' ? '✗ Invalid' : 'Verify'}
+              </button>
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-sm text-text-secondary">
+                Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline font-medium">Google AI Studio</a>
+              </p>
+              {verificationStatus === 'valid' && (
+                <span className="text-xs text-success font-medium">✓ API key verified</span>
+              )}
+              {verificationStatus === 'invalid' && (
+                <span className="text-xs text-error font-medium">✗ Invalid API key</span>
+              )}
+            </div>
           </div>
 
           <div className="animate-slideUp" style={{ animationDelay: '0.1s' }}>
