@@ -59,10 +59,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       
       if (keyboardOpen) {
         setKeyboardHeight(heightDifference);
-        // Calculate a more reasonable offset - just enough to clear the keyboard
-        // Use a smaller offset that positions input just above keyboard
-        const reasonableOffset = Math.min(heightDifference * 0.7, heightDifference - 20);
-        setInputOffset(reasonableOffset);
+        setInputOffset(heightDifference); // Use full keyboard height for proper positioning
       } else {
         setKeyboardHeight(0);
         setInputOffset(0);
@@ -99,8 +96,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         if (heightDiff > 30) {
           setIsKeyboardOpen(true);
           setKeyboardHeight(heightDiff);
-          const reasonableOffset = Math.min(heightDiff * 0.7, heightDiff - 20);
-          setInputOffset(reasonableOffset);
+          setInputOffset(heightDiff);
         }
       }, 100);
     };
@@ -179,12 +175,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     <div 
       className="flex flex-col h-screen w-full mx-auto relative z-10"
       style={{ 
-        height: 'calc(var(--vh, 1vh) * 100)',
-        paddingBottom: isKeyboardOpen ? `${inputOffset + 20}px` : '0px', // Use calculated offset + small buffer
-        transition: 'padding-bottom 0.3s ease-out'
+        height: 'calc(var(--vh, 1vh) * 100)'
       }}
     >
-      <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass sticky top-0 z-20">
+      <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass fixed top-0 left-0 right-0 z-20">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="p-1.5 bg-gradient-accent rounded-lg shadow-glow">
             <AppIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -215,7 +209,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto relative" style={{ minHeight: 0 }}>
+      <main 
+        className="flex-1 overflow-y-auto relative" 
+        style={{ 
+          minHeight: 0,
+          marginTop: '60px', // Account for fixed header
+          marginBottom: isKeyboardOpen ? `${inputOffset}px` : '80px' // Account for fixed footer + keyboard offset
+        }}
+      >
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
@@ -254,15 +255,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       )}
 
       <footer 
-        className="p-3 sm:p-4 glass border-t border-border sticky bottom-0 z-30"
+        className="p-3 sm:p-4 glass border-t border-border fixed bottom-0 left-0 right-0 z-30"
         style={{
-          position: isKeyboardOpen ? 'fixed' : 'sticky',
-          bottom: isKeyboardOpen ? '0' : '0',
-          left: isKeyboardOpen ? '0' : 'auto',
-          right: isKeyboardOpen ? '0' : 'auto',
-          zIndex: 1001,
-          transition: 'all 0.3s ease-out',
-          transform: isKeyboardOpen ? `translateY(-${inputOffset}px)` : 'translateY(0)'
+          transform: isKeyboardOpen ? `translateY(-${keyboardHeight}px)` : 'translateY(0)',
+          transition: 'transform 0.3s ease-out'
         }}
       >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
