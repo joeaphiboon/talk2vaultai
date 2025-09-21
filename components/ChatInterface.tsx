@@ -65,6 +65,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [currentAiResponse, userScrolledUp]);
 
+  // Auto-focus on AI response when it starts
+  useEffect(() => {
+    if (currentAiResponse && textareaRef.current) {
+      // Blur input to hide keyboard and focus on AI response
+      textareaRef.current.blur();
+      scrollToBottom();
+    }
+  }, [currentAiResponse]);
+
   // Track manual scrolling
   useEffect(() => {
     const mainElement = document.querySelector('main');
@@ -153,6 +162,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       onSubmit(prompt);
       setPrompt('');
       
+      // Hide keyboard and focus on AI response
+      if (textareaRef.current) {
+        textareaRef.current.blur(); // Hide keyboard
+      }
+      
       // Force focus on AI response and follow to end
       setUserScrolledUp(false);
       setTimeout(() => {
@@ -163,39 +177,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleTextareaFocus = () => {
     if (textareaRef.current) {
-      // Force focus immediately
       textareaRef.current.focus();
-      
-      // Scroll input into view to ensure it's visible
+      // Smooth scroll to input area
       setTimeout(() => {
         if (textareaRef.current) {
-          textareaRef.current.focus();
           textareaRef.current.scrollIntoView({ 
             behavior: 'smooth', 
-            block: 'center' 
+            block: 'end' 
           });
         }
       }, 100);
-      
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-          textareaRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          });
-        }
-      }, 300);
-      
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-          textareaRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          });
-        }
-      }, 600);
     }
   };
 
@@ -238,7 +229,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         className="flex-1 overflow-y-auto"
         style={{
           height: 'calc(100vh - 60px - 80px)',
-          paddingTop: '60px', // Match header height exactly
+          marginTop: '60px', // Push content below header, no overlap
           paddingBottom: isKeyboardOpen ? `${Math.max(keyboardHeight + 60, 80)}px` : '80px'
         }}
       >
@@ -282,8 +273,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <footer 
         className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30 cursor-pointer"
         style={{
-          bottom: isKeyboardOpen ? `${Math.max(keyboardHeight - 20, 0)}px` : '0px',
-          transition: 'bottom 0.3s ease-out'
+          bottom: isKeyboardOpen ? `${Math.max(keyboardHeight - 10, 0)}px` : '0px',
+          transition: 'bottom 0.2s ease-out'
         }}
         onClick={handleTextareaFocus}
       >

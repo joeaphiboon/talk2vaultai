@@ -127,7 +127,7 @@ html, body {
   /* Ensure consistent behavior across all modes */
   main {
     height: calc(100vh - 60px - 80px) !important;
-    padding-top: 60px !important;
+    margin-top: 60px !important; /* Push content below header, no overlap */
   }
 }
 
