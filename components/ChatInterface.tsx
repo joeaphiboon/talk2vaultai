@@ -44,7 +44,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  useEffect(scrollToBottom, [messages, currentAiResponse]);
+  // Auto-scroll to bottom only when new messages are added (not during streaming)
+  useEffect(() => {
+    // Only scroll when a new message is added, not during streaming
+    if (messages.length > 0 && !currentAiResponse) {
+      scrollToBottom();
+    }
+  }, [messages.length]); // Only trigger when message count changes
+
+  // Auto-scroll during streaming only if user is near bottom
+  useEffect(() => {
+    if (currentAiResponse) {
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        const isNearBottom = mainElement.scrollTop + mainElement.clientHeight >= mainElement.scrollHeight - 100;
+        if (isNearBottom) {
+          scrollToBottom();
+        }
+      }
+    }
+  }, [currentAiResponse]);
 
   // Keyboard detection
   useEffect(() => {
