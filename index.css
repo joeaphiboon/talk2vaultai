@@ -85,6 +85,14 @@ html, body {
     min-height: calc(100vh - 60px - 80px) !important;
   }
 
+  /* PWA mode specific styles */
+  @media (display-mode: standalone) {
+    main {
+      height: calc(var(--vh, 1vh) * 100 - 60px - 80px) !important;
+      min-height: calc(var(--vh, 1vh) * 100 - 60px - 80px) !important;
+    }
+  }
+
   /* Ensure welcome screen fills available space */
   .welcome-screen {
     height: 100% !important;
