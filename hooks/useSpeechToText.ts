@@ -42,9 +42,10 @@ const useSpeechToText = (options: SpeechToTextOptions = {}): SpeechToTextResult 
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognitionRef.current = new SpeechRecognition();
-    const recognition = recognitionRef.current;
+    try {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      const recognition = recognitionRef.current;
 
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -93,22 +94,37 @@ const useSpeechToText = (options: SpeechToTextOptions = {}): SpeechToTextResult 
     };
 
     return () => {
-      recognition.stop();
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
     };
+    } catch (error) {
+      console.error('Error initializing speech recognition:', error);
+    }
   }, [hasRecognitionSupport, options.lang]);
 
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
-      setTranscript('');
-      recognitionRef.current.start();
-      setIsListening(true);
+      try {
+        setTranscript('');
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        setIsListening(false);
+      }
     }
   };
 
   const stopListening = () => {
     if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
+      try {
+        recognitionRef.current.stop();
+        setIsListening(false);
+      } catch (error) {
+        console.error('Error stopping speech recognition:', error);
+        setIsListening(false);
+      }
     }
   };
 

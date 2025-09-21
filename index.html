@@ -77,6 +77,20 @@
             });
         });
       }
+
+      // Mobile browser compatibility check
+      window.addEventListener('error', (e) => {
+        console.error('Global error:', e.error);
+      });
+
+      // Check for required APIs
+      if (!window.fetch) {
+        console.error('Fetch API not supported');
+      }
+      
+      if (!window.localStorage) {
+        console.error('LocalStorage not supported');
+      }
     </script>
   </body>
 </html>
