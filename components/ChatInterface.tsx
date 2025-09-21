@@ -40,6 +40,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   useEffect(scrollToBottom, [messages, currentAiResponse]);
 
+  // Auto-focus textarea after AI response completes
+  useEffect(() => {
+    if (!currentAiResponse && messages.length > 0) {
+      // AI response just completed, focus textarea after a short delay
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 500);
+    }
+  }, [currentAiResponse, messages.length]);
+
 
   // Reset textarea height when prompt is cleared
   useEffect(() => {
@@ -139,6 +151,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 // Auto-resize textarea
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+              }}
+              onClick={() => {
+                // Ensure textarea gets focused when clicked
+                if (textareaRef.current) {
+                  textareaRef.current.focus();
+                }
+              }}
+              onFocus={() => {
+                // Ensure textarea is properly focused and keyboard shows
+                console.log('Textarea focused');
+                if (textareaRef.current) {
+                  // Force focus to ensure keyboard shows up
+                  textareaRef.current.focus();
+                }
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {

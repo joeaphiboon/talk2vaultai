@@ -89,6 +89,24 @@ html, body {
     -webkit-transform: translateZ(0);
   }
 
+  /* Ensure textarea is properly focusable */
+  textarea {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    outline: none;
+    border: none;
+    background: transparent;
+  }
+
+  /* Force focus on mobile */
+  textarea:focus {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+
   /* PWA mode specific styles */
   @media (display-mode: standalone) {
     .pwa-keyboard-open {
