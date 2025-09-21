@@ -105,6 +105,20 @@ html, body {
     outline: none;
     border: none;
     background: transparent;
+    cursor: text;
+  }
+
+  /* Make footer clickable for focus */
+  footer {
+    cursor: pointer;
+  }
+
+  footer form {
+    cursor: default;
+  }
+
+  footer textarea {
+    cursor: text;
   }
 
   /* Force focus on mobile */
