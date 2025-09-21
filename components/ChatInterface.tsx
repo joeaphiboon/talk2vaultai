@@ -156,8 +156,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     <div 
       className="w-full h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/50"
       style={{
-        height: isPWA ? `${viewportHeight}px` : '100vh',
-        height: isPWA ? 'calc(var(--vh, 1vh) * 100)' : '100vh',
+        height: 'calc(var(--vh, 1vh) * 100)',
         transform: isKeyboardOpen ? `translateY(-${keyboardHeight * 0.3}px)` : 'none',
         transition: 'transform 0.3s ease-out'
       }}
@@ -196,8 +195,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <main 
         className="flex-1 overflow-y-auto pt-16 pb-20 min-h-0"
         style={{
-          height: isPWA ? `calc(${viewportHeight}px - 60px - 80px)` : 'calc(100vh - 60px - 80px)',
-          minHeight: isPWA ? `calc(${viewportHeight}px - 60px - 80px)` : 'calc(100vh - 60px - 80px)',
+          height: 'calc(var(--vh, 1vh) * 100 - 60px - 80px)',
+          minHeight: 'calc(var(--vh, 1vh) * 100 - 60px - 80px)',
           paddingBottom: isKeyboardOpen ? `${keyboardHeight * 0.2}px` : '80px'
         }}
       >
