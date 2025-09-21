@@ -35,7 +35,8 @@
 }
 
 html, body, #root {
-  height: 100dvh;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for mobile browsers */
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -45,9 +46,36 @@ body {
   background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
 }
 
+/* Mobile-specific viewport handling */
+@media (max-width: 768px) {
+  html, body, #root {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height */
+  }
+  
+  /* Ensure app container uses full screen */
+  .h-screen {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height */
+  }
+}
+
 /* Prevent zoom on input focus */
 input, textarea, select {
   font-size: 16px;
+}
+
+/* Glass morphism effect (from DAYQUEST DP) */
+.glass-effect {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Smooth transitions (from DAYQUEST DP) */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Smooth scrolling */

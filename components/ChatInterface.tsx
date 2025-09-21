@@ -62,7 +62,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-screen flex flex-col">
       {/* 1. Header */}
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass z-20">
         <div className="flex items-center gap-2 sm:gap-3">
@@ -96,7 +96,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </header>
 
       {/* 2. Content Area - Scrollable */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto min-h-0">
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
@@ -134,11 +134,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </main>
 
       {/* 3. Text Input */}
-      <footer 
-        className="p-3 sm:p-4 glass border-t border-border z-30"
-      >
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
-          <div className="flex-1 min-w-0">
+      <footer className="w-full px-2 py-2 glass border-t border-border">
+        <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto">
+          <div className="relative group">
             <textarea
               ref={textareaRef}
               value={prompt}
@@ -155,19 +153,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }
               }}
               placeholder="ถามคำถามเกี่ยวกับบันทึกของคุณ... (Ask a question about your notes...)"
-              className="w-full glass-input rounded-lg px-3 py-2 text-text-primary placeholder-text-secondary focus:outline-none resize-none text-sm sm:text-base leading-normal transition-all duration-200"
+              className="w-full px-3 py-2.5 pr-12 text-sm glass-effect border-2 border-gray-600/50 rounded-2xl focus:border-accent focus:bg-gray-700 outline-none transition-smooth text-text-primary placeholder-text-secondary resize-none"
               rows={1}
               style={{ minHeight: '36px', maxHeight: '100px' }}
             />
+            <button
+              type="submit"
+              disabled={isLoading || !prompt.trim() || !hasApiKey}
+              className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-10 my-auto mr-1 bg-gradient-accent hover:opacity-90 text-white rounded-xl hover:scale-105 transform transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-accent/50 disabled:opacity-50 disabled:scale-100 shadow-lg group-hover:shadow-xl"
+              title={!hasApiKey ? 'Set API key first' : 'Send message'}
+            >
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <SendIcon className="h-4 w-4" />
+              )}
+            </button>
           </div>
-          <button
-            type="submit"
-            className="bg-gradient-accent text-white p-2 rounded-lg hover:shadow-glow disabled:bg-text-muted disabled:cursor-not-allowed transition-all duration-200"
-            disabled={isLoading || !prompt.trim() || !hasApiKey}
-            title={!hasApiKey ? 'Set API key first' : 'Send message'}
-          >
-            <SendIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-          </button>
         </form>
       </footer>
 
