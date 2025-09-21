@@ -137,6 +137,7 @@ const App: React.FC = () => {
         onSettingsClick={() => setIsSettingsModalOpen(true)}
         onClearConversation={handleClearConversation}
         vaultFileCount={vaultFiles.length}
+        hasApiKey={!!settings.apiKey.trim()}
       />
       {isSettingsModalOpen && (
         <SettingsModal

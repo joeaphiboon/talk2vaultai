@@ -4,6 +4,7 @@ import { ChatMessage } from '../types';
 import Message from './Message';
 import { SendIcon, MicIcon, SettingsIcon, BrainCircuitIcon, ClearIcon } from './Icons';
 import useSpeechToText from '../hooks/useSpeechToText';
+import WelcomeScreen from './WelcomeScreen';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -11,6 +12,7 @@ interface ChatInterfaceProps {
   isLoading: boolean;
   error: string;
   vaultFileCount: number;
+  hasApiKey: boolean;
   onSubmit: (prompt: string) => void;
   onSettingsClick: () => void;
   onClearConversation: () => void;
@@ -22,6 +24,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   isLoading,
   error,
   vaultFileCount,
+  hasApiKey,
   onSubmit,
   onSettingsClick,
   onClearConversation,
@@ -97,15 +100,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 sm:space-y-6" style={{ minHeight: 0 }}>
-        {messages.map((msg, index) => (
-          <Message key={index} role={msg.role} content={msg.content} />
-        ))}
-        {currentAiResponse && <Message role="model" content={currentAiResponse} isStreaming />}
-        {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && !currentAiResponse && (
-           <Message role="model" content="" isLoading />
+      <main className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
+        {messages.length === 0 && !currentAiResponse ? (
+          <WelcomeScreen 
+            onSettingsClick={onSettingsClick}
+            hasApiKey={hasApiKey}
+            hasVaultFiles={vaultFileCount > 0}
+          />
+        ) : (
+          <div className="p-3 sm:p-4 space-y-4 sm:space-y-6">
+            {messages.map((msg, index) => (
+              <Message key={index} role={msg.role} content={msg.content} />
+            ))}
+            {currentAiResponse && <Message role="model" content={currentAiResponse} isStreaming />}
+            {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && !currentAiResponse && (
+               <Message role="model" content="" isLoading />
+            )}
+            <div ref={messagesEndRef} />
+          </div>
         )}
-        <div ref={messagesEndRef} />
       </main>
 
       {error && (
@@ -132,15 +145,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   handleSubmit(e);
                 }
               }}
-              placeholder="ถามคำถามเกี่ยวกับบันทึกของคุณ... (Ask a question about your notes...)"
-              className="w-full bg-transparent p-2 text-text-primary placeholder-text-secondary focus:outline-none resize-none text-sm sm:text-base leading-relaxed"
+              placeholder={hasApiKey ? "ถามคำถามเกี่ยวกับบันทึกของคุณ... (Ask a question about your notes...)" : "Please set your API key in settings first..."}
+              className={`w-full bg-transparent p-2 text-text-primary placeholder-text-secondary focus:outline-none resize-none text-sm sm:text-base leading-relaxed ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
               style={{ 
                 minHeight: '40px', 
                 maxHeight: '120px',
                 height: '40px'
               }}
               rows={1}
-              disabled={isLoading}
+              disabled={isLoading || !hasApiKey}
             />
             {isListening && (
               <div className="px-2 pb-1 text-xs text-accent flex items-center gap-1">
@@ -153,17 +166,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <button
               type="button"
               onClick={handleMicClick}
-              className={`p-2 sm:p-3 rounded-full transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'text-text-secondary hover:bg-accent-hover/20 hover:text-accent'}`}
-              disabled={isLoading}
-              title={isListening ? 'Stop recording' : 'Start voice input'}
+              className={`p-2 sm:p-3 rounded-full transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'text-text-secondary hover:bg-accent-hover/20 hover:text-accent'} ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={isLoading || !hasApiKey}
+              title={!hasApiKey ? 'Set API key first' : (isListening ? 'Stop recording' : 'Start voice input')}
             >
               <MicIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
             <button
               type="submit"
-              className="bg-accent text-primary p-2 sm:p-3 rounded-lg hover:bg-accent-hover disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
-              disabled={isLoading || !prompt.trim()}
-              title="Send message"
+              className={`bg-accent text-primary p-2 sm:p-3 rounded-lg hover:bg-accent-hover disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors ${!hasApiKey ? 'opacity-50' : ''}`}
+              disabled={isLoading || !prompt.trim() || !hasApiKey}
+              title={!hasApiKey ? 'Set API key first' : 'Send message'}
             >
               <SendIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
