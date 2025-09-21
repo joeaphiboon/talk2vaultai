@@ -81,6 +81,16 @@ html, body {
     left: 0 !important;
     right: 0 !important;
     z-index: 30 !important;
+    overflow: hidden !important;
+  }
+
+  /* Prevent textarea from becoming scrollable */
+  footer textarea {
+    position: relative !important;
+    z-index: 32 !important;
+    transform: none !important;
+    max-height: 100px !important;
+    overflow-y: auto !important;
   }
 
   /* Ensure main content scrolls properly */

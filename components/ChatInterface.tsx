@@ -68,8 +68,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setIsKeyboardOpen(keyboardOpen);
       
       if (keyboardOpen) {
-        setKeyboardHeight(heightDifference);
-        console.log('Keyboard opened, height:', heightDifference);
+        // Use a smaller offset to make input stick closer to keyboard
+        const adjustedHeight = Math.min(heightDifference * 0.7, heightDifference - 20);
+        setKeyboardHeight(adjustedHeight);
+        console.log('Keyboard opened, height:', heightDifference, 'adjusted:', adjustedHeight);
       } else {
         setKeyboardHeight(0);
         console.log('Keyboard closed');
@@ -104,7 +106,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           if (heightDiff > 50) {
             console.log('Mobile keyboard detected');
             setIsKeyboardOpen(true);
-            setKeyboardHeight(heightDiff);
+            // Use a smaller offset to make input stick closer to keyboard
+            const adjustedHeight = Math.min(heightDiff * 0.7, heightDiff - 20);
+            setKeyboardHeight(adjustedHeight);
           } else if (heightDiff <= 20) {
             console.log('Mobile keyboard closed');
             setIsKeyboardOpen(false);
@@ -314,7 +318,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   if (heightDiff > 30) {
                     console.log('Keyboard detected on focus');
                     setIsKeyboardOpen(true);
-                    setKeyboardHeight(heightDiff);
+                    // Use a smaller offset to make input stick closer to keyboard
+                    const adjustedHeight = Math.min(heightDiff * 0.7, heightDiff - 20);
+                    setKeyboardHeight(adjustedHeight);
                   }
                 }, 100);
               }}
