@@ -127,7 +127,13 @@ const App: React.FC = () => {
   }, [isLoading, vaultFiles, settings.apiKey]);
 
   return (
-    <div className="bg-primary text-text-primary h-screen flex flex-col font-sans" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+    <div className="bg-gradient-primary text-text-primary h-screen flex flex-col font-sans relative overflow-hidden" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+      {/* Background decoration */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent-light/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      </div>
+      
       <ChatInterface
         messages={messages}
         currentAiResponse={currentAiResponse}

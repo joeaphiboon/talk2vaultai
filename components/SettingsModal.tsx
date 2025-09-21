@@ -38,18 +38,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onSave, onClose
   };
 
   return (
-    <div className="fixed inset-0 bg-primary/80 backdrop-blur-sm flex justify-center items-center z-50 animate-fadeIn p-4">
-      <div className="bg-secondary rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-accent/20">
-        <div className="flex justify-between items-center p-6 pb-4">
-          <h2 className="text-xl sm:text-2xl font-bold text-text-primary">Settings</h2>
-          <button onClick={onClose} className="text-text-secondary hover:text-accent transition-colors p-1 rounded-lg hover:bg-accent/10">
-            <CloseIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+    <div className="fixed inset-0 bg-primary/90 backdrop-blur-md flex justify-center items-center z-50 animate-fadeIn p-4">
+      <div className="glass-card rounded-3xl shadow-glow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto border border-border">
+        <div className="flex justify-between items-center p-8 pb-6">
+          <h2 className="text-2xl sm:text-3xl font-bold text-text-primary">Settings</h2>
+          <button onClick={onClose} className="text-text-secondary hover:text-accent transition-all duration-200 p-2 rounded-xl hover:bg-accent/10 hover:shadow-glow">
+            <CloseIcon className="h-6 w-6 sm:h-7 sm:w-7" />
           </button>
         </div>
 
-        <div className="px-6 pb-6 space-y-4 sm:space-y-6">
-          <div>
-            <label htmlFor="apiKey" className="block text-sm font-medium text-text-secondary mb-2">
+        <div className="px-8 pb-8 space-y-6 sm:space-y-8">
+          <div className="animate-slideUp">
+            <label htmlFor="apiKey" className="block text-base font-semibold text-text-primary mb-3">
               Gemini API Key
             </label>
             <input
@@ -58,15 +58,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onSave, onClose
               value={currentSettings.apiKey}
               onChange={(e) => setCurrentSettings({ ...currentSettings, apiKey: e.target.value })}
               placeholder="Enter your Gemini API key"
-              className="w-full bg-primary border border-accent/30 rounded-lg p-3 text-text-primary focus:ring-2 focus:ring-accent focus:outline-none"
+              className="w-full glass-input rounded-xl p-4 text-text-primary focus:outline-none text-base"
             />
-            <p className="text-xs text-text-secondary mt-1">
-              Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Google AI Studio</a>
+            <p className="text-sm text-text-secondary mt-2">
+              Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline font-medium">Google AI Studio</a>
             </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+          <div className="animate-slideUp" style={{ animationDelay: '0.1s' }}>
+            <label className="block text-base font-semibold text-text-primary mb-3">
               Select Vault Folder
             </label>
             <input
@@ -81,25 +81,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onSave, onClose
             />
             <button
               onClick={handleBrowseClick}
-              className="w-full bg-primary border border-accent/30 rounded-lg p-3 text-text-primary hover:bg-accent/10 transition-colors flex justify-between items-center"
+              className="w-full glass-input rounded-xl p-4 text-text-primary hover:bg-accent/10 transition-all duration-200 flex justify-between items-center hover:shadow-glow"
             >
-              <span>{fileName || 'Browse for folder...'}</span>
-              <FolderIcon className="h-5 w-5" />
+              <span className="font-medium">{fileName || 'Browse for folder...'}</span>
+              <FolderIcon className="h-6 w-6 text-accent" />
             </button>
           </div>
 
         </div>
 
-        <div className="px-6 pb-6 pt-4 flex flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between">
+        <div className="px-8 pb-8 pt-6 flex flex-col sm:flex-row gap-4 sm:gap-0 sm:justify-between">
           <button
             onClick={onClear}
-            className="bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
+            className="bg-error text-white font-bold py-4 px-8 rounded-xl hover:bg-error/90 transition-all duration-200 text-base hover:shadow-glow animate-slideUp"
+            style={{ animationDelay: '0.2s' }}
           >
             Clear All
           </button>
           <button
             onClick={handleSave}
-            className="bg-accent text-primary font-bold py-3 px-6 rounded-lg hover:bg-accent-hover transition-colors text-sm sm:text-base"
+            className="bg-gradient-accent text-white font-bold py-4 px-8 rounded-xl hover:shadow-glow-lg transition-all duration-200 text-base animate-slideUp"
+            style={{ animationDelay: '0.3s' }}
           >
             Save Settings
           </button>

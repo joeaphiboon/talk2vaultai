@@ -73,18 +73,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-screen w-full mx-auto" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
-      <header className="flex justify-between items-center p-3 sm:p-4 border-b border-secondary bg-primary/95 backdrop-blur-sm sticky top-0 z-10">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <BrainCircuitIcon className="h-6 w-6 sm:h-8 sm:w-8 text-accent" />
-          <h1 className="text-lg sm:text-xl font-bold text-text-primary">Talk2MyVault</h1>
+    <div className="flex flex-col h-screen w-full mx-auto relative z-10" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+      <header className="flex justify-between items-center p-4 sm:p-6 border-b border-border glass sticky top-0 z-20">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="p-2 bg-gradient-accent rounded-xl shadow-glow">
+            <BrainCircuitIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-text-primary">Talk2MyVault</h1>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <span className="text-xs sm:text-sm text-text-secondary hidden sm:block">{vaultFileCount} notes</span>
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-secondary/50 rounded-full border border-border">
+            <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+            <span className="text-sm text-text-secondary">{vaultFileCount} notes</span>
+          </div>
           {messages.length > 0 && (
             <button 
               onClick={onClearConversation}
-              className="text-text-secondary hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-400/10"
+              className="text-text-secondary hover:text-error transition-all duration-200 p-2 rounded-xl hover:bg-error/10 hover:shadow-glow"
               title="Clear conversation"
             >
               <ClearIcon className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -92,7 +97,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           )}
           <button 
             onClick={onSettingsClick} 
-            className="text-text-secondary hover:text-accent transition-colors p-1 rounded-lg hover:bg-accent/10"
+            className="text-text-secondary hover:text-accent transition-all duration-200 p-2 rounded-xl hover:bg-accent/10 hover:shadow-glow"
             title="Settings"
           >
             <SettingsIcon className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -100,7 +105,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
+      <main className="flex-1 overflow-y-auto relative" style={{ minHeight: 0 }}>
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
@@ -108,13 +113,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             hasVaultFiles={vaultFileCount > 0}
           />
         ) : (
-          <div className="p-3 sm:p-4 space-y-4 sm:space-y-6">
+          <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
             {messages.map((msg, index) => (
-              <Message key={index} role={msg.role} content={msg.content} />
+              <div key={index} className="animate-slideUp" style={{ animationDelay: `${index * 0.1}s` }}>
+                <Message role={msg.role} content={msg.content} />
+              </div>
             ))}
-            {currentAiResponse && <Message role="model" content={currentAiResponse} isStreaming />}
+            {currentAiResponse && (
+              <div className="animate-slideUp">
+                <Message role="model" content={currentAiResponse} isStreaming />
+              </div>
+            )}
             {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && !currentAiResponse && (
-               <Message role="model" content="" isLoading />
+               <div className="animate-slideUp">
+                 <Message role="model" content="" isLoading />
+               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -122,13 +135,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </main>
 
       {error && (
-        <div className="mx-3 sm:mx-4 mb-3 sm:mb-4 px-3 py-2 text-red-400 bg-red-900/50 border border-red-500 rounded-lg text-sm">
-          {error}
+        <div className="mx-4 sm:mx-6 mb-4 sm:mb-6 px-4 py-3 text-error bg-error/10 border border-error/30 rounded-xl text-sm animate-slideUp backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-error rounded-full animate-pulse"></div>
+            {error}
+          </div>
         </div>
       )}
 
-      <footer className="p-3 sm:p-4 bg-primary/95 backdrop-blur-sm border-t border-secondary">
-        <form onSubmit={handleSubmit} className="flex items-end gap-2 bg-secondary rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent transition-shadow">
+      <footer className="p-4 sm:p-6 glass border-t border-border">
+        <form onSubmit={handleSubmit} className="flex items-end gap-3 glass-card rounded-2xl p-3 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">
             <textarea
               ref={textareaRef}
@@ -146,27 +162,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }
               }}
               placeholder={hasApiKey ? "ถามคำถามเกี่ยวกับบันทึกของคุณ... (Ask a question about your notes...)" : "Please set your API key in settings first..."}
-              className={`w-full bg-transparent p-2 text-text-primary placeholder-text-secondary focus:outline-none resize-none text-sm sm:text-base leading-relaxed ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-full glass-input rounded-xl p-3 text-text-primary placeholder-text-secondary focus:outline-none resize-none text-sm sm:text-base leading-relaxed transition-all duration-200 ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
               style={{ 
-                minHeight: '40px', 
+                minHeight: '48px', 
                 maxHeight: '120px',
-                height: '40px'
+                height: '48px'
               }}
               rows={1}
               disabled={isLoading || !hasApiKey}
             />
             {isListening && (
-              <div className="px-2 pb-1 text-xs text-accent flex items-center gap-1">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                {isInterim ? 'Listening...' : 'Processing...'}
+              <div className="px-3 pb-1 text-xs text-accent flex items-center gap-2 mt-1">
+                <div className="w-2 h-2 bg-error rounded-full animate-pulse"></div>
+                <span className="font-medium">{isInterim ? 'Listening...' : 'Processing...'}</span>
               </div>
             )}
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={handleMicClick}
-              className={`p-2 sm:p-3 rounded-full transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'text-text-secondary hover:bg-accent-hover/20 hover:text-accent'} ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`p-3 rounded-xl transition-all duration-200 ${isListening ? 'bg-error text-white shadow-glow animate-pulse' : 'text-text-secondary hover:bg-accent/20 hover:text-accent hover:shadow-glow'} ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={isLoading || !hasApiKey}
               title={!hasApiKey ? 'Set API key first' : (isListening ? 'Stop recording' : 'Start voice input')}
             >
@@ -174,7 +190,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </button>
             <button
               type="submit"
-              className={`bg-accent text-primary p-2 sm:p-3 rounded-lg hover:bg-accent-hover disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors ${!hasApiKey ? 'opacity-50' : ''}`}
+              className={`bg-gradient-accent text-white p-3 rounded-xl hover:shadow-glow disabled:bg-text-muted disabled:cursor-not-allowed transition-all duration-200 ${!hasApiKey ? 'opacity-50' : ''}`}
               disabled={isLoading || !prompt.trim() || !hasApiKey}
               title={!hasApiKey ? 'Set API key first' : 'Send message'}
             >

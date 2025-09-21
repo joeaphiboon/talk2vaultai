@@ -28,25 +28,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For CSS and JS files, always try network first
+  // For CSS and JS files, don't interfere - let browser handle them
   if (event.request.url.includes('.css') || event.request.url.includes('.js')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache successful responses
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // If network fails, try cache
-          return caches.match(event.request);
-        })
-    );
     return;
   }
 
