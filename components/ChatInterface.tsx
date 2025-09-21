@@ -33,6 +33,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
   const [initialViewportHeight, setInitialViewportHeight] = useState(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { isListening, transcript, startListening, stopListening, isInterim } = useSpeechToText({ 
@@ -67,6 +68,30 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         const heightDifference = initialViewportHeight - currentViewportHeight;
         const keyboardOpen = heightDifference > 100; // Lower threshold for PWA
         setIsKeyboardOpen(keyboardOpen);
+        
+        if (keyboardOpen) {
+          // Calculate keyboard height and move input up
+          const calculatedKeyboardHeight = heightDifference;
+          setKeyboardHeight(calculatedKeyboardHeight);
+          
+          // Move the input up by the keyboard height
+          if (textareaRef.current) {
+            const inputContainer = textareaRef.current.closest('footer');
+            if (inputContainer) {
+              inputContainer.style.transform = `translateY(-${calculatedKeyboardHeight}px)`;
+              inputContainer.style.transition = 'transform 0.3s ease-out';
+            }
+          }
+        } else {
+          // Reset transform when keyboard closes
+          setKeyboardHeight(0);
+          if (textareaRef.current) {
+            const inputContainer = textareaRef.current.closest('footer');
+            if (inputContainer) {
+              inputContainer.style.transform = 'translateY(0)';
+            }
+          }
+        }
       } else {
         // Browser mode - use visual viewport API
         const heightDifference = initialViewportHeight - currentViewportHeight;
@@ -107,8 +132,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           const currentHeight = window.visualViewport?.height || window.innerHeight;
           if (currentHeight < initialViewportHeight - 50) {
             setIsKeyboardOpen(true);
+            const heightDifference = initialViewportHeight - currentHeight;
+            setKeyboardHeight(heightDifference);
+            
+            // Move input up immediately on focus
+            if (textareaRef.current) {
+              const inputContainer = textareaRef.current.closest('footer');
+              if (inputContainer) {
+                inputContainer.style.transform = `translateY(-${heightDifference}px)`;
+                inputContainer.style.transition = 'transform 0.3s ease-out';
+              }
+            }
           }
-        }, 300);
+        }, 100); // Faster response
       };
 
       const handleInputBlur = () => {
@@ -116,6 +152,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           const currentHeight = window.visualViewport?.height || window.innerHeight;
           if (currentHeight >= initialViewportHeight - 50) {
             setIsKeyboardOpen(false);
+            setKeyboardHeight(0);
+            
+            // Reset input position
+            if (textareaRef.current) {
+              const inputContainer = textareaRef.current.closest('footer');
+              if (inputContainer) {
+                inputContainer.style.transform = 'translateY(0)';
+              }
+            }
           }
         }, 300);
       };
@@ -191,7 +236,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className={`flex flex-col h-screen w-full mx-auto relative z-10 transition-all duration-300 ${isKeyboardOpen ? (isPWA ? 'pwa-keyboard-open' : 'pb-0') : ''}`} style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+    <div 
+      className={`flex flex-col h-screen w-full mx-auto relative z-10 transition-all duration-300 ${isKeyboardOpen ? (isPWA ? 'pwa-keyboard-open' : 'pb-0') : ''}`} 
+      style={{ 
+        height: 'calc(var(--vh, 1vh) * 100)',
+        transform: isKeyboardOpen && isPWA ? `translateY(-${keyboardHeight}px)` : 'translateY(0)',
+        transition: 'transform 0.3s ease-out'
+      }}
+    >
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass sticky top-0 z-20">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="p-1.5 bg-gradient-accent rounded-lg shadow-glow">
@@ -279,12 +331,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   // More aggressive scrolling for PWA
                   setTimeout(() => {
                     if (textareaRef.current) {
+                      // Force scroll to input
                       textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                      // Also scroll the page to ensure input is visible
+                      window.scrollTo({ 
+                        top: document.body.scrollHeight, 
+                        behavior: 'smooth' 
+                      });
                     }
                     scrollToBottom();
                   }, 100);
                   setTimeout(() => {
                     scrollToBottom();
+                    // Additional scroll after keyboard appears
+                    if (textareaRef.current) {
+                      textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }
                   }, 500);
                 } else {
                   setTimeout(() => {
