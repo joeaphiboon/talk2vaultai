@@ -67,20 +67,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      {/* 1. Header */}vent) => {
-    e.preventDefault();
-    if (prompt.trim()) {
-      onSubmit(prompt);
-      setPrompt('');
-    }
-  };
-
-  const handleTextareaFocus = () => {
-    textareaRef.current?.focus();
-  };
-
-  return (
-    <div className="h-screen flex flex-col">
       {/* 1. Header */}
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass z-20">
         <div className="flex items-center gap-2 sm:gap-3">
@@ -200,7 +186,5 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
     </div>
-  );
-};
 
 export default ChatInterface;
