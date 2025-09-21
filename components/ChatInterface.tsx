@@ -31,6 +31,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [prompt, setPrompt] = useState('');
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const [isPWA, setIsPWA] = useState(false);
+  const [initialViewportHeight, setInitialViewportHeight] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { isListening, transcript, startListening, stopListening, isInterim } = useSpeechToText({ 
@@ -43,21 +45,43 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [transcript]);
 
-  // Mobile keyboard detection and viewport handling
+  // PWA detection and mobile keyboard handling
   useEffect(() => {
+    // Detect if running in PWA mode
+    const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
+                     (window.navigator as any).standalone === true ||
+                     document.referrer.includes('android-app://');
+    setIsPWA(isPWAMode);
+
     const handleResize = () => {
-      const initialViewportHeight = window.visualViewport?.height || window.innerHeight;
       const currentViewportHeight = window.visualViewport?.height || window.innerHeight;
-      const heightDifference = initialViewportHeight - currentViewportHeight;
       
-      // Consider keyboard open if viewport height decreased by more than 150px
-      const keyboardOpen = heightDifference > 150;
-      setIsKeyboardOpen(keyboardOpen);
+      // For PWA mode, use a different approach
+      if (isPWAMode) {
+        // In PWA, we need to track the initial height and compare
+        if (initialViewportHeight === 0) {
+          setInitialViewportHeight(currentViewportHeight);
+          return;
+        }
+        
+        const heightDifference = initialViewportHeight - currentViewportHeight;
+        const keyboardOpen = heightDifference > 100; // Lower threshold for PWA
+        setIsKeyboardOpen(keyboardOpen);
+      } else {
+        // Browser mode - use visual viewport API
+        const heightDifference = initialViewportHeight - currentViewportHeight;
+        const keyboardOpen = heightDifference > 150;
+        setIsKeyboardOpen(keyboardOpen);
+      }
       
       // Update CSS custom property for viewport height
       const vh = currentViewportHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
+
+    // Set initial viewport height
+    const currentHeight = window.visualViewport?.height || window.innerHeight;
+    setInitialViewportHeight(currentHeight);
 
     // Listen for viewport changes (mobile keyboard)
     if (window.visualViewport) {
@@ -66,8 +90,49 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       window.addEventListener('resize', handleResize);
     }
 
-    // Initial setup
-    handleResize();
+    // Additional PWA-specific handling
+    if (isPWAMode) {
+      // Listen for orientation changes in PWA
+      window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+          const newHeight = window.visualViewport?.height || window.innerHeight;
+          setInitialViewportHeight(newHeight);
+          handleResize();
+        }, 500);
+      });
+
+      // PWA-specific keyboard detection using focus/blur events
+      const handleInputFocus = () => {
+        setTimeout(() => {
+          const currentHeight = window.visualViewport?.height || window.innerHeight;
+          if (currentHeight < initialViewportHeight - 50) {
+            setIsKeyboardOpen(true);
+          }
+        }, 300);
+      };
+
+      const handleInputBlur = () => {
+        setTimeout(() => {
+          const currentHeight = window.visualViewport?.height || window.innerHeight;
+          if (currentHeight >= initialViewportHeight - 50) {
+            setIsKeyboardOpen(false);
+          }
+        }, 300);
+      };
+
+      // Add focus/blur listeners to textarea
+      if (textareaRef.current) {
+        textareaRef.current.addEventListener('focus', handleInputFocus);
+        textareaRef.current.addEventListener('blur', handleInputBlur);
+      }
+
+      return () => {
+        if (textareaRef.current) {
+          textareaRef.current.removeEventListener('focus', handleInputFocus);
+          textareaRef.current.removeEventListener('blur', handleInputBlur);
+        }
+      };
+    }
 
     return () => {
       if (window.visualViewport) {
@@ -75,8 +140,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       } else {
         window.removeEventListener('resize', handleResize);
       }
+      window.removeEventListener('orientationchange', handleResize);
     };
-  }, []);
+  }, [isPWA, initialViewportHeight]);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -87,9 +153,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Auto-scroll when keyboard opens
   useEffect(() => {
     if (isKeyboardOpen) {
-      setTimeout(scrollToBottom, 100); // Small delay to ensure layout is updated
+      if (isPWA) {
+        // More aggressive scrolling for PWA
+        setTimeout(() => {
+          scrollToBottom();
+          // Additional scroll after a longer delay for PWA
+          setTimeout(scrollToBottom, 500);
+        }, 100);
+      } else {
+        setTimeout(scrollToBottom, 100); // Small delay to ensure layout is updated
+      }
     }
-  }, [isKeyboardOpen]);
+  }, [isKeyboardOpen, isPWA]);
 
   // Reset textarea height when prompt is cleared
   useEffect(() => {
@@ -116,7 +191,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className={`flex flex-col h-screen w-full mx-auto relative z-10 transition-all duration-300 ${isKeyboardOpen ? 'pb-0' : ''}`} style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+    <div className={`flex flex-col h-screen w-full mx-auto relative z-10 transition-all duration-300 ${isKeyboardOpen ? (isPWA ? 'pwa-keyboard-open' : 'pb-0') : ''}`} style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass sticky top-0 z-20">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="p-1.5 bg-gradient-accent rounded-lg shadow-glow">
@@ -148,7 +223,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </header>
 
-      <main className={`flex-1 overflow-y-auto relative transition-all duration-300 ${isKeyboardOpen ? 'pb-2' : ''}`} style={{ minHeight: 0 }}>
+      <main className={`flex-1 overflow-y-auto relative transition-all duration-300 ${isKeyboardOpen ? (isPWA ? 'pwa-keyboard-main' : 'pb-2') : ''}`} style={{ minHeight: 0 }}>
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
@@ -186,7 +261,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      <footer className={`p-3 sm:p-4 glass border-t border-border transition-all duration-300 ${isKeyboardOpen ? 'sticky bottom-0 z-30' : ''}`}>
+      <footer className={`p-3 sm:p-4 glass border-t border-border transition-all duration-300 ${isKeyboardOpen ? (isPWA ? 'pwa-keyboard-footer' : 'sticky bottom-0 z-30') : ''}`}>
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">
             <textarea
@@ -200,11 +275,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               }}
               onFocus={() => {
                 // Ensure textarea is visible when focused
-                setTimeout(() => {
-                  if (textareaRef.current) {
-                    textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }
-                }, 300);
+                if (isPWA) {
+                  // More aggressive scrolling for PWA
+                  setTimeout(() => {
+                    if (textareaRef.current) {
+                      textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }
+                    scrollToBottom();
+                  }, 100);
+                  setTimeout(() => {
+                    scrollToBottom();
+                  }, 500);
+                } else {
+                  setTimeout(() => {
+                    if (textareaRef.current) {
+                      textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }, 300);
+                }
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
