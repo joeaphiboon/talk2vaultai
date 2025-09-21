@@ -226,14 +226,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div 
-      className={`flex flex-col h-screen w-full mx-auto relative z-10 ${isPWA ? 'pwa-container' : ''}`}
+      className={`w-full mx-auto relative z-10 ${isPWA ? 'pwa-container' : 'min-h-screen'}`}
       style={{ 
-        height: 'calc(var(--vh, 1vh) * 100)',
+        height: isPWA ? '100vh' : 'calc(var(--vh, 1vh) * 100)',
         position: isPWA ? 'fixed' : 'relative',
         top: isPWA ? '0' : 'auto',
         left: isPWA ? '0' : 'auto',
         right: isPWA ? '0' : 'auto',
-        bottom: isPWA ? '0' : 'auto'
+        bottom: isPWA ? '0' : 'auto',
+        display: isPWA ? 'block' : 'flex',
+        flexDirection: isPWA ? 'unset' : 'column'
       }}
     >
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass fixed top-0 left-0 right-0 z-20">
@@ -268,7 +270,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </header>
 
       <main 
-        className="flex-1 overflow-y-auto relative" 
+        className="overflow-y-auto relative" 
         style={{ 
           minHeight: 0,
           marginTop: '60px', // Account for fixed header
@@ -278,8 +280,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           left: isPWA ? '0' : 'auto',
           right: isPWA ? '0' : 'auto',
           bottom: isPWA ? (isKeyboardOpen ? `${inputOffset}px` : '80px') : 'auto',
-          height: isPWA ? `calc(100vh - 60px - ${isKeyboardOpen ? inputOffset : 80}px)` : 'auto',
-          zIndex: 10 // Ensure main content stays below footer
+          height: isPWA ? `calc(100vh - 60px - ${isKeyboardOpen ? inputOffset : 80}px)` : 'calc(100vh - 60px - 80px)',
+          zIndex: 10, // Ensure main content stays below footer
+          flex: isPWA ? 'none' : '1' // Only use flex in non-PWA mode
         }}
       >
         {messages.length === 0 && !currentAiResponse ? (
