@@ -15,6 +15,8 @@ interface ChatInterfaceProps {
   onSubmit: (prompt: string) => void;
   onSettingsClick: () => void;
   onClearConversation: () => void;
+  isKeyboardOpen: boolean;
+  keyboardHeight: number;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -27,12 +29,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSubmit,
   onSettingsClick,
   onClearConversation,
+  isKeyboardOpen,
+  keyboardHeight,
 }) => {
   const [prompt, setPrompt] = useState('');
-  const [isPWA, setIsPWA] = useState(false);
-  const [viewportHeight, setViewportHeight] = useState(0);
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -43,66 +43,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   useEffect(scrollToBottom, [messages, currentAiResponse]);
-
-  // PWA detection and viewport height handling
-  useEffect(() => {
-    // Detect PWA mode
-    const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
-                     (window.navigator as any).standalone === true ||
-                     document.referrer.includes('android-app://');
-    setIsPWA(isPWAMode);
-
-    // Set initial viewport height
-    const updateViewportHeight = () => {
-      const height = window.visualViewport?.height || window.innerHeight;
-      const fullHeight = window.innerHeight;
-      const heightDifference = fullHeight - height;
-      
-      setViewportHeight(height);
-      
-      // Detect keyboard state
-      const keyboardOpen = heightDifference > 150; // Threshold for keyboard detection
-      setIsKeyboardOpen(keyboardOpen);
-      setKeyboardHeight(keyboardOpen ? heightDifference : 0);
-      
-      // Update CSS custom property for viewport height
-      const vh = height * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
-      document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
-    };
-
-    updateViewportHeight();
-
-    // Listen for viewport changes (keyboard show/hide)
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateViewportHeight);
-    } else {
-      window.addEventListener('resize', updateViewportHeight);
-    }
-
-    // Also listen to window resize as backup
-    window.addEventListener('resize', updateViewportHeight);
-
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateViewportHeight);
-      }
-      window.removeEventListener('resize', updateViewportHeight);
-    };
-  }, []);
-
-  // Apply keyboard-open class to body when keyboard is open and in chat content
-  useEffect(() => {
-    if (isKeyboardOpen && messages.length > 0) {
-      document.body.classList.add('keyboard-open');
-    } else {
-      document.body.classList.remove('keyboard-open');
-    }
-    
-    return () => {
-      document.body.classList.remove('keyboard-open');
-    };
-  }, [isKeyboardOpen, messages.length]);
 
   // Auto-focus textarea after AI response completes
   useEffect(() => {
@@ -153,14 +93,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
 
   return (
-    <div 
-      className="w-full h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/50"
-      style={{
-        height: 'calc(var(--vh, 1vh) * 100)',
-        transform: (isKeyboardOpen && messages.length > 0) ? `translateY(-${Math.min(keyboardHeight * 0.5, keyboardHeight - 100)}px)` : 'none',
-        transition: 'transform 0.3s ease-out'
-      }}
-    >
+    <>
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass fixed top-0 left-0 right-0 z-20">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="p-1.5 bg-gradient-accent rounded-lg shadow-glow">
@@ -284,7 +217,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </button>
         </form>
       </footer>
-    </div>
+    </>
   );
 };
 
