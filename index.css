@@ -81,6 +81,14 @@ html, body {
   main {
     z-index: 10 !important;
     position: relative !important;
+    height: calc(100vh - 60px - 80px) !important;
+    min-height: calc(100vh - 60px - 80px) !important;
+  }
+
+  /* Ensure welcome screen fills available space */
+  .welcome-screen {
+    height: 100% !important;
+    min-height: 100% !important;
   }
 
   /* Ensure input stays visible when keyboard is open */

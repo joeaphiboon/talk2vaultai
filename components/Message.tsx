@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserIcon, BrainCircuitIcon, CopyIcon } from './Icons';
 
 interface MessageProps {
@@ -16,6 +16,30 @@ const TypingIndicator: React.FC = () => (
     <span className="h-2 w-2 bg-accent rounded-full animate-typing shadow-glow" style={{ animationDelay: '0.4s' }}></span>
   </div>
 );
+
+const TypingAnimation: React.FC<{ text: string; speed?: number }> = ({ text, speed = 30 }) => {
+  const [displayedText, setDisplayedText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText(prev => prev + text[currentIndex]);
+        setCurrentIndex(prev => prev + 1);
+      }, speed);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [currentIndex, text, speed]);
+
+  useEffect(() => {
+    // Reset when text changes
+    setDisplayedText('');
+    setCurrentIndex(0);
+  }, [text]);
+
+  return <span>{displayedText}</span>;
+};
 
 const Message: React.FC<MessageProps> = ({ role, content, isStreaming, isLoading }) => {
   const isUser = role === 'user';
@@ -47,8 +71,16 @@ const Message: React.FC<MessageProps> = ({ role, content, isStreaming, isLoading
           </div>
         )}
         <div className={bubbleClasses}>
-          {isLoading ? <TypingIndicator /> : <p>{content}</p>}
-          {isStreaming && !isLoading && <span className="inline-block w-2 h-4 bg-accent ml-1 animate-pulse shadow-glow" />}
+          {isLoading ? (
+            <TypingIndicator />
+          ) : isStreaming ? (
+            <p>
+              <TypingAnimation text={content} speed={20} />
+              <span className="inline-block w-2 h-4 bg-accent ml-1 animate-pulse shadow-glow" />
+            </p>
+          ) : (
+            <p>{content}</p>
+          )}
         </div>
         {isUser && (
           <div className={iconClasses}>

@@ -9,7 +9,7 @@ interface WelcomeScreenProps {
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onSettingsClick, hasApiKey, hasVaultFiles }) => {
   return (
-    <div className="flex items-center justify-center p-6 h-full min-h-full">
+    <div className="welcome-screen flex items-center justify-center p-6 h-full min-h-full w-full">
       <div className="text-center max-w-md mx-auto">
         {/* App Icon */}
         <div className="mb-6 flex justify-center">

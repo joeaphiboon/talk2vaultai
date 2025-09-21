@@ -102,7 +102,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto pt-16 pb-20">
+      <main className="flex-1 overflow-y-auto pt-16 pb-20 min-h-0">
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
