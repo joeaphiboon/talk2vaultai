@@ -21,9 +21,17 @@ const InstallPrompt: React.FC = () => {
 
     const handleBeforeInstallPrompt = (e: Event) => {
       console.log('beforeinstallprompt event fired');
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      const promptEvent = e as BeforeInstallPromptEvent;
+      
+      // Store the event for our custom UI
+      setDeferredPrompt(promptEvent);
       setShowInstallPrompt(true);
+      
+      // Clear the manual install timer since we have an automatic prompt
+      setShowManualInstall(false);
+      
+      // Don't prevent default - let browser show its own prompt
+      // We'll show our custom UI alongside it
     };
 
     const handleAppInstalled = () => {
@@ -58,8 +66,12 @@ const InstallPrompt: React.FC = () => {
     }
 
     try {
-      console.log('Calling prompt()');
+      console.log('User clicked install, calling prompt()');
+      
+      // Call the prompt
       await deferredPrompt.prompt();
+      
+      // Wait for user choice
       const { outcome } = await deferredPrompt.userChoice;
       
       if (outcome === 'accepted') {
@@ -69,10 +81,11 @@ const InstallPrompt: React.FC = () => {
       }
     } catch (error) {
       console.error('Error showing install prompt:', error);
+    } finally {
+      // Always clean up
+      setDeferredPrompt(null);
+      setShowInstallPrompt(false);
     }
-    
-    setDeferredPrompt(null);
-    setShowInstallPrompt(false);
   };
 
   const handleDismiss = () => {
