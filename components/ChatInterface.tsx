@@ -2,8 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '../types';
 import Message from './Message';
-import { SendIcon, MicIcon, SettingsIcon, AppIcon, ClearIcon } from './Icons';
-import useSpeechToText from '../hooks/useSpeechToText';
+import { SendIcon, SettingsIcon, AppIcon, ClearIcon } from './Icons';
 import WelcomeScreen from './WelcomeScreen';
 
 interface ChatInterfaceProps {
@@ -36,15 +35,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { isListening, transcript, startListening, stopListening, isInterim } = useSpeechToText({ 
-    autoDetectLanguage: true 
-  });
 
-  useEffect(() => {
-    if (transcript) {
-      setPrompt(transcript);
-    }
-  }, [transcript]);
 
   // PWA detection and mobile keyboard handling
   useEffect(() => {
@@ -226,14 +217,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleMicClick = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      setPrompt('');
-      startListening();
-    }
-  };
 
   return (
     <div 
@@ -372,32 +355,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               rows={1}
               disabled={isLoading || !hasApiKey}
             />
-            {isListening && (
-              <div className="px-3 pb-1 text-xs text-accent flex items-center gap-2 mt-1">
-                <div className="w-2 h-2 bg-error rounded-full animate-pulse"></div>
-                <span className="font-medium">{isInterim ? 'Listening...' : 'Processing...'}</span>
-              </div>
-            )}
           </div>
-          <div className="flex gap-1">
-            <button
-              type="button"
-              onClick={handleMicClick}
-              className={`p-2 rounded-lg transition-all duration-200 ${isListening ? 'bg-error text-white shadow-glow animate-pulse' : 'text-text-secondary hover:bg-accent/20 hover:text-accent hover:shadow-glow'} ${!hasApiKey ? 'opacity-50 cursor-not-allowed' : ''}`}
-              disabled={isLoading || !hasApiKey}
-              title={!hasApiKey ? 'Set API key first' : (isListening ? 'Stop recording' : 'Start voice input')}
-            >
-              <MicIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-            </button>
-            <button
-              type="submit"
-              className={`bg-gradient-accent text-white p-2 rounded-lg hover:shadow-glow disabled:bg-text-muted disabled:cursor-not-allowed transition-all duration-200 ${!hasApiKey ? 'opacity-50' : ''}`}
-              disabled={isLoading || !prompt.trim() || !hasApiKey}
-              title={!hasApiKey ? 'Set API key first' : 'Send message'}
-            >
-              <SendIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-            </button>
-          </div>
+          <button
+            type="submit"
+            className={`bg-gradient-accent text-white p-2 rounded-lg hover:shadow-glow disabled:bg-text-muted disabled:cursor-not-allowed transition-all duration-200 ${!hasApiKey ? 'opacity-50' : ''}`}
+            disabled={isLoading || !prompt.trim() || !hasApiKey}
+            title={!hasApiKey ? 'Set API key first' : 'Send message'}
+          >
+            <SendIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+          </button>
         </form>
       </footer>
     </div>
