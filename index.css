@@ -93,6 +93,21 @@ html, body {
     }
   }
 
+  /* Keyboard adjustments */
+  .keyboard-open {
+    transform: translateY(calc(var(--keyboard-height, 0px) * -0.3)) !important;
+    transition: transform 0.3s ease-out !important;
+  }
+
+  .keyboard-open main {
+    padding-bottom: calc(var(--keyboard-height, 0px) * 0.2) !important;
+  }
+
+  .keyboard-open footer {
+    bottom: calc(var(--keyboard-height, 0px) * 0.1) !important;
+    transition: bottom 0.3s ease-out !important;
+  }
+
   /* Ensure welcome screen fills available space */
   .welcome-screen {
     height: 100% !important;

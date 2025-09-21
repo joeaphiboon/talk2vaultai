@@ -31,6 +31,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [prompt, setPrompt] = useState('');
   const [isPWA, setIsPWA] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -53,10 +55,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     // Set initial viewport height
     const updateViewportHeight = () => {
       const height = window.visualViewport?.height || window.innerHeight;
+      const fullHeight = window.innerHeight;
+      const heightDifference = fullHeight - height;
+      
       setViewportHeight(height);
+      
+      // Detect keyboard state
+      const keyboardOpen = heightDifference > 150; // Threshold for keyboard detection
+      setIsKeyboardOpen(keyboardOpen);
+      setKeyboardHeight(keyboardOpen ? heightDifference : 0);
+      
       // Update CSS custom property for viewport height
       const vh = height * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
+      document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
     };
 
     updateViewportHeight();
@@ -78,6 +90,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       window.removeEventListener('resize', updateViewportHeight);
     };
   }, []);
+
+  // Apply keyboard-open class to body when keyboard is open
+  useEffect(() => {
+    if (isKeyboardOpen) {
+      document.body.classList.add('keyboard-open');
+    } else {
+      document.body.classList.remove('keyboard-open');
+    }
+    
+    return () => {
+      document.body.classList.remove('keyboard-open');
+    };
+  }, [isKeyboardOpen]);
 
   // Auto-focus textarea after AI response completes
   useEffect(() => {
@@ -107,13 +132,34 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const handleTextareaFocus = () => {
+    // Force focus and ensure textarea is visible
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      
+      // Small delay to ensure keyboard is fully open
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          // Scroll textarea into view if needed
+          textareaRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      }, 300);
+    }
+  };
+
 
   return (
     <div 
       className="w-full h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/50"
       style={{
         height: isPWA ? `${viewportHeight}px` : '100vh',
-        height: isPWA ? 'calc(var(--vh, 1vh) * 100)' : '100vh'
+        height: isPWA ? 'calc(var(--vh, 1vh) * 100)' : '100vh',
+        transform: isKeyboardOpen ? `translateY(-${keyboardHeight * 0.3}px)` : 'none',
+        transition: 'transform 0.3s ease-out'
       }}
     >
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass fixed top-0 left-0 right-0 z-20">
@@ -151,7 +197,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         className="flex-1 overflow-y-auto pt-16 pb-20 min-h-0"
         style={{
           height: isPWA ? `calc(${viewportHeight}px - 60px - 80px)` : 'calc(100vh - 60px - 80px)',
-          minHeight: isPWA ? `calc(${viewportHeight}px - 60px - 80px)` : 'calc(100vh - 60px - 80px)'
+          minHeight: isPWA ? `calc(${viewportHeight}px - 60px - 80px)` : 'calc(100vh - 60px - 80px)',
+          paddingBottom: isKeyboardOpen ? `${keyboardHeight * 0.2}px` : '80px'
         }}
       >
         {messages.length === 0 && !currentAiResponse ? (
@@ -191,7 +238,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      <footer className="p-3 sm:p-4 glass border-t border-border fixed bottom-0 left-0 right-0 z-30">
+      <footer 
+        className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30"
+        style={{
+          bottom: isKeyboardOpen ? `${keyboardHeight * 0.1}px` : '0px',
+          transition: 'bottom 0.3s ease-out'
+        }}
+      >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">
             <textarea
@@ -203,20 +256,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
               }}
-              onClick={() => {
-                // Ensure textarea gets focused when clicked
-                if (textareaRef.current) {
-                  textareaRef.current.focus();
-                }
-              }}
-              onFocus={() => {
-                // Ensure textarea is properly focused and keyboard shows
-                console.log('Textarea focused');
-                if (textareaRef.current) {
-                  // Force focus to ensure keyboard shows up
-                  textareaRef.current.focus();
-                }
-              }}
+              onClick={handleTextareaFocus}
+              onFocus={handleTextareaFocus}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
