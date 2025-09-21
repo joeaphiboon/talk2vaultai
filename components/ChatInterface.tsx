@@ -30,25 +30,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [prompt, setPrompt] = useState('');
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-  const [isPWA, setIsPWA] = useState(false);
   const [initialViewportHeight, setInitialViewportHeight] = useState(0);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [inputOffset, setInputOffset] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 
   // Mobile keyboard handling with improved detection
   useEffect(() => {
-    // Detect if running in PWA mode
-    const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
-                     (window.navigator as any).standalone === true ||
-                     document.referrer.includes('android-app://');
-    setIsPWA(isPWAMode);
 
     // Detect mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    console.log('Device detection:', { isPWAMode, isMobile, userAgent: navigator.userAgent });
+    console.log('Device detection:', { isMobile, userAgent: navigator.userAgent });
 
     let initialHeight = window.visualViewport?.height || window.innerHeight;
     setInitialViewportHeight(initialHeight);
@@ -64,19 +57,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         initialHeight, 
         currentHeight, 
         heightDifference, 
-        keyboardOpen,
-        isPWA: isPWAMode 
+        keyboardOpen
       });
       
       setIsKeyboardOpen(keyboardOpen);
       
       if (keyboardOpen) {
         setKeyboardHeight(heightDifference);
-        setInputOffset(heightDifference);
         console.log('Keyboard opened, height:', heightDifference);
       } else {
         setKeyboardHeight(0);
-        setInputOffset(0);
         console.log('Keyboard closed');
       }
       
@@ -110,12 +100,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             console.log('Mobile keyboard detected');
             setIsKeyboardOpen(true);
             setKeyboardHeight(heightDiff);
-            setInputOffset(heightDiff);
           } else if (heightDiff <= 20) {
             console.log('Mobile keyboard closed');
             setIsKeyboardOpen(false);
             setKeyboardHeight(0);
-            setInputOffset(0);
           }
         }, 100);
       };
@@ -146,7 +134,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           console.log('Keyboard detected on focus');
           setIsKeyboardOpen(true);
           setKeyboardHeight(heightDiff);
-          setInputOffset(heightDiff);
         }
       }, 200); // Increased delay for mobile
     };
@@ -161,7 +148,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           console.log('Keyboard closed on blur');
           setIsKeyboardOpen(false);
           setKeyboardHeight(0);
-          setInputOffset(0);
         }
       }, 500); // Increased delay for mobile
     };
@@ -225,15 +211,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
 
   return (
-    <div 
-      className={`w-full mx-auto relative z-10 min-h-screen flex flex-col ${isKeyboardOpen ? 'mobile-keyboard-open' : ''}`}
-      style={{ 
-        height: 'calc(var(--vh, 1vh) * 100)',
-        position: 'relative',
-        overflow: 'hidden',
-        '--keyboard-height': `${keyboardHeight}px`
-      } as React.CSSProperties}
-    >
+    <div className="w-full h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/50">
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass fixed top-0 left-0 right-0 z-20">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="p-1.5 bg-gradient-accent rounded-lg shadow-glow">
@@ -265,15 +243,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </header>
 
-      <main 
-        className="flex-1 overflow-y-auto relative" 
-        style={{ 
-          minHeight: 0,
-          marginTop: '60px', // Account for fixed header
-          marginBottom: isKeyboardOpen ? `${inputOffset}px` : '80px', // Account for fixed footer + keyboard offset
-          zIndex: 10 // Ensure main content stays below footer
-        }}
-      >
+      <main className="flex-1 overflow-y-auto pt-16 pb-20">
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
@@ -312,16 +282,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       )}
 
       <footer 
-        className={`p-3 sm:p-4 glass border-t border-border fixed bottom-0 left-0 right-0 z-30 ${isKeyboardOpen ? 'mobile-keyboard-open' : ''}`}
+        className="p-3 sm:p-4 glass border-t border-border fixed bottom-0 left-0 right-0 z-30"
         style={{
-          position: 'fixed',
-          bottom: isKeyboardOpen ? `${keyboardHeight}px` : '0px',
-          left: '0',
-          right: '0',
-          zIndex: 30,
-          transition: 'bottom 0.3s ease-out',
-          transform: 'none',
-          overflow: 'hidden'
+          transform: isKeyboardOpen ? `translateY(-${keyboardHeight}px)` : 'translateY(0)',
+          transition: 'transform 0.3s ease-out'
         }}
       >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
@@ -338,42 +302,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               onFocus={() => {
                 console.log('Textarea focused');
                 
-                // Prevent default mobile behavior that moves input to middle
-                setTimeout(() => {
-                  window.scrollTo(0, 0);
-                  if (textareaRef.current) {
-                    textareaRef.current.scrollIntoView = () => {}; // Disable scrollIntoView
-                  }
-                }, 0);
-                
-                // Ensure textarea stays within footer
-                if (textareaRef.current) {
-                  const textarea = textareaRef.current;
-                  textarea.style.position = 'relative';
-                  textarea.style.zIndex = '32';
-                  textarea.style.transform = 'none';
-                }
-                
                 // Force keyboard detection on focus
                 setTimeout(() => {
                   const currentHeight = window.visualViewport?.height || window.innerHeight;
                   const heightDiff = initialViewportHeight - currentHeight;
-                  console.log('Focus immediate check:', { currentHeight, heightDiff, initialViewportHeight });
+                  console.log('Focus check:', { currentHeight, heightDiff, initialViewportHeight });
                   
                   if (heightDiff > 30) {
-                    console.log('Keyboard detected immediately on focus');
+                    console.log('Keyboard detected on focus');
                     setIsKeyboardOpen(true);
                     setKeyboardHeight(heightDiff);
-                    setInputOffset(heightDiff);
                   }
-                }, 100);
-                
-                // Ensure textarea is visible when focused
-                setTimeout(() => {
-                  if (textareaRef.current) {
-                    textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                  }
-                  scrollToBottom();
                 }, 100);
               }}
               onKeyDown={(e) => {
