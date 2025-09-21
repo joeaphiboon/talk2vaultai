@@ -19,7 +19,6 @@ const App: React.FC = () => {
   const [currentAiResponse, setCurrentAiResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-
   // Load settings and vault files from localStorage on component mount
   useEffect(() => {
     const savedSettings = loadSettings();
@@ -126,7 +125,13 @@ const App: React.FC = () => {
   }, [isLoading, vaultFiles, settings.apiKey]);
 
   return (
-    <div className="bg-gradient-primary text-text-primary h-screen flex flex-col font-sans relative overflow-hidden" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+    <div 
+      className="bg-gradient-to-br from-background via-background to-background/50 text-text-primary h-screen flex flex-col font-sans relative overflow-hidden" 
+      style={{ 
+        height: 'calc(var(--vh, 1vh) * 100)', 
+        minHeight: 'calc(var(--vh, 1vh) * 100)'
+      }}
+    >
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-0 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse"></div>
