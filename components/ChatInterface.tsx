@@ -47,12 +47,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Auto-focus textarea after AI response completes
   useEffect(() => {
     if (!currentAiResponse && messages.length > 0) {
-      // AI response just completed, focus textarea after a short delay
-      setTimeout(() => {
+      // AI response just completed, focus textarea with multiple attempts
+      const focusTextarea = () => {
         if (textareaRef.current) {
           textareaRef.current.focus();
+          // Force scroll to bottom to ensure textarea is visible
+          textareaRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'end' 
+          });
         }
-      }, 500);
+      };
+      
+      // Multiple attempts to ensure focus works
+      setTimeout(focusTextarea, 100);
+      setTimeout(focusTextarea, 500);
+      setTimeout(focusTextarea, 1000);
     }
   }, [currentAiResponse, messages.length]);
 
@@ -77,17 +87,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (textareaRef.current) {
       textareaRef.current.focus();
       
-      // Small delay to ensure keyboard is fully open
+      // Multiple attempts to ensure focus works
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus();
           // Scroll textarea into view if needed
           textareaRef.current.scrollIntoView({ 
             behavior: 'smooth', 
-            block: 'center' 
+            block: 'end' 
           });
         }
-      }, 300);
+      }, 100);
+      
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 500);
     }
   };
 
@@ -171,11 +187,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       )}
 
       <footer 
-        className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30"
+        className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30 cursor-pointer"
         style={{
           bottom: (isKeyboardOpen && messages.length > 0) ? `${Math.min(keyboardHeight * 0.2, keyboardHeight - 50)}px` : '0px',
           transition: 'bottom 0.3s ease-out'
         }}
+        onClick={handleTextareaFocus}
       >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">

@@ -20,23 +20,32 @@ const TypingIndicator: React.FC = () => (
 const TypingAnimation: React.FC<{ text: string; speed?: number }> = ({ text, speed = 30 }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
-    if (currentIndex < text.length) {
+    // Only reset if text length decreased (new message) or if we're starting fresh
+    if (text.length < displayedText.length || currentIndex === 0) {
+      setDisplayedText('');
+      setCurrentIndex(0);
+      setIsComplete(false);
+    }
+  }, [text.length, displayedText.length, currentIndex]);
+
+  useEffect(() => {
+    if (currentIndex < text.length && !isComplete) {
       const timeout = setTimeout(() => {
-        setDisplayedText(prev => prev + text[currentIndex]);
+        setDisplayedText(text.substring(0, currentIndex + 1));
         setCurrentIndex(prev => prev + 1);
+        
+        // Mark as complete when we reach the end
+        if (currentIndex + 1 >= text.length) {
+          setIsComplete(true);
+        }
       }, speed);
 
       return () => clearTimeout(timeout);
     }
-  }, [currentIndex, text, speed]);
-
-  useEffect(() => {
-    // Reset when text changes
-    setDisplayedText('');
-    setCurrentIndex(0);
-  }, [text]);
+  }, [currentIndex, text, speed, isComplete]);
 
   return <span>{displayedText}</span>;
 };
