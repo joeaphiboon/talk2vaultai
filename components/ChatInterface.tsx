@@ -74,6 +74,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [currentAiResponse]);
 
+  // Apply keyboard-open class to body for PWA
+  useEffect(() => {
+    if (isPWA && isKeyboardOpen) {
+      document.body.classList.add('keyboard-open');
+    } else {
+      document.body.classList.remove('keyboard-open');
+    }
+    
+    return () => {
+      document.body.classList.remove('keyboard-open');
+    };
+  }, [isPWA, isKeyboardOpen]);
+
   // Track manual scrolling
   useEffect(() => {
     const mainElement = document.querySelector('main');
@@ -103,8 +116,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       const fullHeight = window.innerHeight;
       const heightDifference = fullHeight - height;
       
-      // Detect keyboard state
-      const keyboardOpen = heightDifference > 150; // Threshold for keyboard detection
+      // Detect keyboard state with PWA-specific threshold
+      const keyboardThreshold = isPWA ? 100 : 150;
+      const keyboardOpen = heightDifference > keyboardThreshold;
       setIsKeyboardOpen(keyboardOpen);
       setKeyboardHeight(keyboardOpen ? heightDifference : 0);
       
@@ -136,7 +150,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
       window.removeEventListener('resize', updateViewportHeight);
     };
-  }, []);
+  }, [isPWA]); // Add isPWA dependency for PWA-specific behavior
 
   // Auto-focus textarea after AI response completes
   useEffect(() => {
@@ -230,7 +244,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         style={{
           height: 'calc(100vh - 60px - 80px)',
           marginTop: '60px', // Push content below header, no overlap
-          paddingBottom: isKeyboardOpen ? `${Math.max(keyboardHeight + 60, 80)}px` : '80px'
+          paddingBottom: isKeyboardOpen ? `${isPWA ? Math.max(keyboardHeight + 40, 80) : Math.max(keyboardHeight + 60, 80)}px` : '80px'
         }}
       >
         {messages.length === 0 && !currentAiResponse ? (
@@ -273,7 +287,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <footer 
         className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30 cursor-pointer"
         style={{
-          bottom: isKeyboardOpen ? `${Math.max(keyboardHeight - 10, 0)}px` : '0px',
+          bottom: isKeyboardOpen ? `${isPWA ? Math.max(keyboardHeight - 5, 0) : Math.max(keyboardHeight - 10, 0)}px` : '0px',
           transition: 'bottom 0.2s ease-out'
         }}
         onClick={handleTextareaFocus}
