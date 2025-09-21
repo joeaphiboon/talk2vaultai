@@ -57,6 +57,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       const keyboardOpen = heightDifference > 150; // Threshold for keyboard detection
       setIsKeyboardOpen(keyboardOpen);
       setKeyboardHeight(keyboardOpen ? heightDifference : 0);
+      
+      // If keyboard just opened, ensure input is visible
+      if (keyboardOpen && textareaRef.current) {
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+          }
+        }, 100);
+      }
     };
 
     updateViewportHeight();
@@ -107,22 +119,34 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       // Force focus immediately
       textareaRef.current.focus();
       
-      // Multiple attempts to ensure focus works
+      // Scroll input into view to ensure it's visible
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus();
+          textareaRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
         }
       }, 100);
       
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus();
+          textareaRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
         }
       }, 300);
       
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus();
+          textareaRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
         }
       }, 600);
     }
@@ -166,6 +190,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <main 
         className="flex-1 overflow-y-auto pt-16"
         style={{
+          height: 'calc(100vh - 60px - 80px)',
           paddingBottom: isKeyboardOpen ? `${keyboardHeight + 80}px` : '80px'
         }}
       >
