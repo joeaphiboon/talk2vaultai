@@ -311,10 +311,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       )}
 
       <footer 
-        className="p-3 sm:p-4 glass border-t border-border fixed bottom-0 left-0 right-0 z-30"
+        className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30"
         style={{
-          transform: isKeyboardOpen ? `translateY(-${keyboardHeight}px)` : 'translateY(0)',
-          transition: 'transform 0.3s ease-out'
+          position: 'fixed',
+          bottom: isKeyboardOpen ? `${keyboardHeight}px` : '0px',
+          left: '0',
+          right: '0',
+          zIndex: 30,
+          transition: 'bottom 0.3s ease-out',
+          overflow: 'hidden'
         }}
       >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
