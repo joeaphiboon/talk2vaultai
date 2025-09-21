@@ -46,6 +46,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Track if user has manually scrolled up
   const [userScrolledUp, setUserScrolledUp] = useState(false);
+  
+  // PWA detection
+  const [isPWA, setIsPWA] = useState(false);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -74,6 +77,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     mainElement.addEventListener('scroll', handleScroll);
     return () => mainElement.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // PWA detection
+  useEffect(() => {
+    const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
+                     (window.navigator as any).standalone === true ||
+                     document.referrer.includes('android-app://');
+    setIsPWA(isPWAMode);
   }, []);
 
   // Keyboard detection
@@ -224,10 +235,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* 2. Content Area - Scrollable */}
       <main 
-        className="flex-1 overflow-y-auto pt-16"
+        className="flex-1 overflow-y-auto"
         style={{
           height: 'calc(100vh - 60px - 80px)',
-          paddingBottom: isKeyboardOpen ? `${keyboardHeight + 80}px` : '80px'
+          paddingTop: '60px', // Match header height exactly
+          paddingBottom: isKeyboardOpen ? `${Math.max(keyboardHeight + 60, 80)}px` : '80px'
         }}
       >
         {messages.length === 0 && !currentAiResponse ? (
@@ -270,7 +282,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <footer 
         className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30 cursor-pointer"
         style={{
-          bottom: isKeyboardOpen ? `${keyboardHeight}px` : '0px',
+          bottom: isKeyboardOpen ? `${Math.max(keyboardHeight - 20, 0)}px` : '0px',
           transition: 'bottom 0.3s ease-out'
         }}
         onClick={handleTextareaFocus}
