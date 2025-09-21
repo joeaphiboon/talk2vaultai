@@ -226,17 +226,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div 
-      className={`w-full mx-auto relative z-10 ${isPWA ? 'pwa-container' : 'min-h-screen'}`}
+      className={`w-full mx-auto relative z-10 min-h-screen flex flex-col ${isKeyboardOpen ? 'mobile-keyboard-open' : ''}`}
       style={{ 
-        height: isPWA ? '100vh' : 'calc(var(--vh, 1vh) * 100)',
-        position: isPWA ? 'fixed' : 'relative',
-        top: isPWA ? '0' : 'auto',
-        left: isPWA ? '0' : 'auto',
-        right: isPWA ? '0' : 'auto',
-        bottom: isPWA ? '0' : 'auto',
-        display: isPWA ? 'block' : 'flex',
-        flexDirection: isPWA ? 'unset' : 'column'
-      }}
+        height: 'calc(var(--vh, 1vh) * 100)',
+        position: 'relative',
+        overflow: 'hidden',
+        '--keyboard-height': `${keyboardHeight}px`
+      } as React.CSSProperties}
     >
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass fixed top-0 left-0 right-0 z-20">
         <div className="flex items-center gap-2 sm:gap-3">
@@ -270,19 +266,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </header>
 
       <main 
-        className="overflow-y-auto relative" 
+        className="flex-1 overflow-y-auto relative" 
         style={{ 
           minHeight: 0,
           marginTop: '60px', // Account for fixed header
           marginBottom: isKeyboardOpen ? `${inputOffset}px` : '80px', // Account for fixed footer + keyboard offset
-          position: isPWA ? 'absolute' : 'relative',
-          top: isPWA ? '60px' : 'auto',
-          left: isPWA ? '0' : 'auto',
-          right: isPWA ? '0' : 'auto',
-          bottom: isPWA ? (isKeyboardOpen ? `${inputOffset}px` : '80px') : 'auto',
-          height: isPWA ? `calc(100vh - 60px - ${isKeyboardOpen ? inputOffset : 80}px)` : 'calc(100vh - 60px - 80px)',
-          zIndex: 10, // Ensure main content stays below footer
-          flex: isPWA ? 'none' : '1' // Only use flex in non-PWA mode
+          zIndex: 10 // Ensure main content stays below footer
         }}
       >
         {messages.length === 0 && !currentAiResponse ? (
@@ -323,7 +312,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       )}
 
       <footer 
-        className="p-3 sm:p-4 glass border-t border-border fixed bottom-0 left-0 right-0 z-30"
+        className={`p-3 sm:p-4 glass border-t border-border fixed bottom-0 left-0 right-0 z-30 ${isKeyboardOpen ? 'mobile-keyboard-open' : ''}`}
         style={{
           position: 'fixed',
           bottom: isKeyboardOpen ? `${keyboardHeight}px` : '0px',
@@ -331,7 +320,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           right: '0',
           zIndex: 30,
           transition: 'bottom 0.3s ease-out',
-          transform: 'none' // Remove transform, use bottom positioning instead
+          transform: 'none',
+          overflow: 'hidden'
         }}
       >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
@@ -349,34 +339,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 console.log('Textarea focused');
                 
                 // Prevent default mobile behavior that moves input to middle
-                if (isPWA) {
-                  // Prevent the browser from scrolling the input into view
-                  setTimeout(() => {
-                    window.scrollTo(0, 0);
-                    if (textareaRef.current) {
-                      textareaRef.current.scrollIntoView = () => {}; // Disable scrollIntoView
-                    }
-                  }, 0);
-                }
+                setTimeout(() => {
+                  window.scrollTo(0, 0);
+                  if (textareaRef.current) {
+                    textareaRef.current.scrollIntoView = () => {}; // Disable scrollIntoView
+                  }
+                }, 0);
                 
-                // Prevent textarea from breaking out of footer
+                // Ensure textarea stays within footer
                 if (textareaRef.current) {
                   const textarea = textareaRef.current;
-                  const footer = textarea.closest('footer');
-                  if (footer) {
-                    // Ensure footer stays fixed
-                    footer.style.position = 'fixed';
-                    footer.style.bottom = isKeyboardOpen ? `${keyboardHeight}px` : '0px';
-                    footer.style.left = '0';
-                    footer.style.right = '0';
-                    footer.style.zIndex = '30';
-                    footer.style.overflow = 'hidden';
-                    
-                    // Ensure textarea stays within footer
-                    textarea.style.position = 'relative';
-                    textarea.style.zIndex = '32';
-                    textarea.style.transform = 'none';
-                  }
+                  textarea.style.position = 'relative';
+                  textarea.style.zIndex = '32';
+                  textarea.style.transform = 'none';
                 }
                 
                 // Force keyboard detection on focus
@@ -394,34 +369,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }, 100);
                 
                 // Ensure textarea is visible when focused
-                if (isPWA) {
-                  // More aggressive scrolling for PWA
-                  setTimeout(() => {
-                    if (textareaRef.current) {
-                      // Force scroll to input
-                      textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                      // Also scroll the page to ensure input is visible
-                      window.scrollTo({ 
-                        top: document.body.scrollHeight, 
-                        behavior: 'smooth' 
-                      });
-                    }
-                    scrollToBottom();
-                  }, 100);
-                  setTimeout(() => {
-                    scrollToBottom();
-                    // Additional scroll after keyboard appears
-                    if (textareaRef.current) {
-                      textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    }
-                  }, 500);
-                } else {
-                  setTimeout(() => {
-                    if (textareaRef.current) {
-                      textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                  }, 300);
-                }
+                setTimeout(() => {
+                  if (textareaRef.current) {
+                    textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                  }
+                  scrollToBottom();
+                }, 100);
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
