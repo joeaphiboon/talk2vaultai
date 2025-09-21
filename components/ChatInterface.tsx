@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '../types';
 import Message from './Message';
-import { SendIcon, SettingsIcon, AppIcon, ClearIcon } from './Icons';
+import { SendIcon, SettingsIcon, AppIcon, ClearIcon, PaperAirplaneIcon } from './Icons';
+import LoadingSpinner from './LoadingSpinner';
 import WelcomeScreen from './WelcomeScreen';
 
 interface ChatInterfaceProps {
@@ -29,7 +30,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [prompt, setPrompt] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,18 +40,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     scrollToBottom();
   }, [messages, currentAiResponse]);
 
-  // Auto-focus textarea after AI response completes
+  // Auto-focus input after AI response completes
   useEffect(() => {
     if (!isLoading && messages.length > 0) {
-      textareaRef.current?.focus();
+      inputRef.current?.focus();
     }
   }, [isLoading, messages.length]);
   
-  // Reset textarea height when prompt is cleared
+  // Reset input when prompt is cleared (no height reset needed for input)
   useEffect(() => {
-    if (!prompt && textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
+    // Input doesn't need height reset like textarea
   }, [prompt]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -133,41 +132,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         )}
       </main>
 
-      {/* 3. Text Input */}
+      {/* 3. Text Input - Exact DAYQUEST DP Copy */}
       <footer className="w-full px-2 py-2 glass border-t border-border">
         <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto">
           <div className="relative group">
-            <textarea
-              ref={textareaRef}
+            <input
+              ref={inputRef}
+              type="text"
               value={prompt}
-              onChange={(e) => {
-                setPrompt(e.target.value);
-                // Auto-resize textarea
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-              placeholder="ถามคำถามเกี่ยวกับบันทึกของคุณ... (Ask a question about your notes...)"
-              className="w-full px-3 py-2.5 pr-12 text-sm glass-effect border-2 border-gray-600/50 rounded-2xl focus:border-accent focus:bg-gray-700 outline-none transition-smooth text-text-primary placeholder-text-secondary resize-none"
-              rows={1}
-              style={{ minHeight: '36px', maxHeight: '100px' }}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Ask me anything about your vault..."
+              disabled={isLoading}
+              className="w-full px-3 py-2.5 pr-12 text-sm glass-effect border-2 border-gray-600/50 rounded-2xl focus-enhanced focus:border-teal-400 focus:bg-gray-700 outline-none transition-smooth text-gray-100 placeholder-gray-400 disabled:opacity-50 shadow-premium hover:shadow-premium-lg hover:border-gray-500"
             />
             <button
               type="submit"
               disabled={isLoading || !prompt.trim() || !hasApiKey}
-              className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-10 my-auto mr-1 bg-gradient-accent hover:opacity-90 text-white rounded-xl hover:scale-105 transform transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-accent/50 disabled:opacity-50 disabled:scale-100 shadow-lg group-hover:shadow-xl"
-              title={!hasApiKey ? 'Set API key first' : 'Send message'}
+              className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-10 my-auto mr-1 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white rounded-xl hover:scale-105 transform transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-teal-500/50 disabled:from-gray-500 disabled:to-gray-500 disabled:scale-100 shadow-lg group-hover:shadow-xl"
+              aria-label="Send Message"
             >
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <SendIcon className="h-4 w-4" />
-              )}
+              {isLoading ? <LoadingSpinner /> : <PaperAirplaneIcon className="w-4 h-4" />}
             </button>
           </div>
         </form>
