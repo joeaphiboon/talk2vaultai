@@ -1,0 +1,7 @@
+{
+  "name": "Obsidian Chat Assistant",
+  "description": "An intelligent chat application that connects to your Obsidian vault (local or Google Drive), allowing you to ask questions in natural language (Thai or English) and receive smart, context-aware answers streamed directly from your notes.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
