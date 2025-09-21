@@ -38,10 +38,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Mobile keyboard handling with improved detection
   useEffect(() => {
-
     // Detect mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     console.log('Device detection:', { isMobile, userAgent: navigator.userAgent });
+
+    // Only run keyboard detection on mobile devices
+    if (!isMobile) {
+      console.log('Desktop detected, skipping keyboard handling');
+      return;
+    }
 
     let initialHeight = window.visualViewport?.height || window.innerHeight;
     setInitialViewportHeight(initialHeight);
@@ -292,6 +297,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               }}
               onFocus={() => {
                 console.log('Textarea focused');
+                
+                // Only run keyboard detection on mobile
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (!isMobile) {
+                  console.log('Desktop detected, skipping keyboard detection on focus');
+                  return;
+                }
                 
                 // Force keyboard detection on focus
                 setTimeout(() => {
