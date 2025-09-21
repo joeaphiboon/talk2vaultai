@@ -186,5 +186,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
     </div>
+  );
+};
 
 export default ChatInterface;
