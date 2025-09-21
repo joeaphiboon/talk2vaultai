@@ -52,6 +52,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    const handleFocus = () => {
+      setTimeout(() => {
+        textarea?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 100);
+    };
+
+    textarea?.addEventListener('focus', handleFocus);
+
+    return () => {
+      textarea?.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -80,10 +95,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       onSubmit(prompt);
       setPrompt('');
     }
-  };
-
-  const handleTextareaFocus = () => {
-    textareaRef.current?.focus();
   };
 
   return (
@@ -161,7 +172,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* 3. Text Input */}
       <footer 
         className="p-3 sm:p-4 glass border-t border-border z-30"
-        onClick={handleTextareaFocus}
       >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">
@@ -174,7 +184,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
               }}
-              onFocus={handleTextareaFocus}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
