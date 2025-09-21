@@ -34,7 +34,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  };
+
+  const scrollToTop = () => {
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   useEffect(scrollToBottom, [messages, currentAiResponse]);
@@ -97,14 +104,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleTextareaFocus = () => {
     if (textareaRef.current) {
+      // Force focus immediately
       textareaRef.current.focus();
       
-      // Small delay to ensure keyboard is fully open
+      // Multiple attempts to ensure focus works
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 100);
+      
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus();
         }
       }, 300);
+      
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 600);
     }
   };
 
@@ -143,7 +163,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </header>
 
       {/* 2. Content Area - Scrollable */}
-      <main className="flex-1 overflow-y-auto pt-16 pb-20">
+      <main 
+        className="flex-1 overflow-y-auto pt-16"
+        style={{
+          paddingBottom: isKeyboardOpen ? `${keyboardHeight + 80}px` : '80px'
+        }}
+      >
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
@@ -182,11 +207,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* 3. Text Input - Fixed */}
       <footer 
-        className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30"
+        className="p-3 sm:p-4 glass border-t border-border fixed left-0 right-0 z-30 cursor-pointer"
         style={{
           bottom: isKeyboardOpen ? `${keyboardHeight}px` : '0px',
           transition: 'bottom 0.3s ease-out'
         }}
+        onClick={handleTextareaFocus}
       >
         <form onSubmit={handleSubmit} className="flex items-center gap-2 glass-card rounded-xl p-2 focus-within:ring-2 focus-within:ring-accent focus-within:shadow-glow transition-all duration-200">
           <div className="flex-1 min-w-0">
