@@ -222,7 +222,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div 
-      className="w-full h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/50 app-container"
+      className={`w-full h-screen flex flex-col bg-gradient-to-br from-background via-background to-background/50 app-container ${isKeyboardOpen ? 'mobile-keyboard-open' : ''}`}
       style={{
         height: '100vh',
         height: 'calc(var(--vh, 1vh) * 100)',
@@ -231,8 +231,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         top: 0,
         left: 0,
         right: 0,
-        bottom: 0
-      }}
+        bottom: 0,
+        '--keyboard-height': `${keyboardHeight}px`
+      } as React.CSSProperties}
     >
       <header className="flex justify-between items-center px-4 py-2 sm:px-6 sm:py-3 border-b border-border glass fixed top-0 left-0 right-0 z-20">
         <div className="flex items-center gap-2 sm:gap-3">
@@ -265,7 +266,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto pt-16 pb-20">
+      <main 
+        className="flex-1 overflow-y-auto pt-16 pb-20"
+        style={{
+          height: isKeyboardOpen ? `calc(100vh - 60px - 80px - ${keyboardHeight}px)` : 'calc(100vh - 60px - 80px)',
+          minHeight: isKeyboardOpen ? `calc(100vh - 60px - 80px - ${keyboardHeight}px)` : 'calc(100vh - 60px - 80px)'
+        }}
+      >
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
