@@ -11,6 +11,7 @@ A mobile-friendly Progressive Web App (PWA) that allows you to chat with your Ob
 - 🔒 **Secure**: User-controlled API keys (no hardcoded keys)
 - 📦 **PWA Support**: Install as an app on your device
 - 🌐 **Fullscreen Mode**: Runs in fullscreen on mobile devices
+- 📁 **Local File Support**: Select your own Obsidian vault folder
 
 ## Getting Started
 
@@ -42,9 +43,11 @@ npm run dev
 ### Usage
 
 1. **Set up your API key**: Click the settings icon and enter your Gemini API key
-2. **Select your vault**: Choose your Obsidian vault folder (markdown files only)
+2. **Select your vault**: Choose your local Obsidian vault folder (markdown files only)
 3. **Start chatting**: Ask questions about your notes in either Thai or English
 4. **Voice input**: Use the microphone button for voice input (supports both languages)
+
+**Note**: This app works with your local Obsidian vault files. Simply select your vault folder containing markdown files, and the AI will be able to answer questions based on your notes.
 
 ## Deployment
 
