@@ -30,6 +30,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [prompt, setPrompt] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.visualViewport && mainRef.current) {
+        const keyboardHeight = window.innerHeight - window.visualViewport.height;
+        mainRef.current.style.paddingBottom = `${keyboardHeight}px`;
+        scrollToBottom();
+      }
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+      }
+    };
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -100,7 +121,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </header>
 
       {/* 2. Content Area - Scrollable */}
-      <main className="flex-1 overflow-y-auto">
+      <main ref={mainRef} className="flex-1 overflow-y-auto">
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
