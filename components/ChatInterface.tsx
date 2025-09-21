@@ -44,26 +44,37 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  // Auto-scroll to bottom only when new messages are added (not during streaming)
+  // Track if user has manually scrolled up
+  const [userScrolledUp, setUserScrolledUp] = useState(false);
+
+  // Auto-scroll to bottom when new messages are added
   useEffect(() => {
-    // Only scroll when a new message is added, not during streaming
-    if (messages.length > 0 && !currentAiResponse) {
+    if (messages.length > 0) {
+      scrollToBottom();
+      setUserScrolledUp(false); // Reset scroll state when new message added
+    }
+  }, [messages.length]);
+
+  // Auto-scroll during AI streaming (always follow the response)
+  useEffect(() => {
+    if (currentAiResponse && !userScrolledUp) {
       scrollToBottom();
     }
-  }, [messages.length]); // Only trigger when message count changes
+  }, [currentAiResponse, userScrolledUp]);
 
-  // Auto-scroll during streaming only if user is near bottom
+  // Track manual scrolling
   useEffect(() => {
-    if (currentAiResponse) {
-      const mainElement = document.querySelector('main');
-      if (mainElement) {
-        const isNearBottom = mainElement.scrollTop + mainElement.clientHeight >= mainElement.scrollHeight - 100;
-        if (isNearBottom) {
-          scrollToBottom();
-        }
-      }
-    }
-  }, [currentAiResponse]);
+    const mainElement = document.querySelector('main');
+    if (!mainElement) return;
+
+    const handleScroll = () => {
+      const isNearBottom = mainElement.scrollTop + mainElement.clientHeight >= mainElement.scrollHeight - 100;
+      setUserScrolledUp(!isNearBottom);
+    };
+
+    mainElement.addEventListener('scroll', handleScroll);
+    return () => mainElement.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Keyboard detection
   useEffect(() => {
@@ -130,6 +141,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (prompt.trim()) {
       onSubmit(prompt);
       setPrompt('');
+      
+      // Force focus on AI response and follow to end
+      setUserScrolledUp(false);
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
     }
   };
 
