@@ -181,18 +181,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Auto-scroll when keyboard opens
   useEffect(() => {
     if (isKeyboardOpen) {
-      if (isPWA) {
-        // More aggressive scrolling for PWA
-        setTimeout(() => {
-          scrollToBottom();
-          // Additional scroll after a longer delay for PWA
-          setTimeout(scrollToBottom, 500);
-        }, 100);
-      } else {
-        setTimeout(scrollToBottom, 100); // Small delay to ensure layout is updated
-      }
+      setTimeout(scrollToBottom, 100); // Small delay to ensure layout is updated
     }
-  }, [isKeyboardOpen, isPWA]);
+  }, [isKeyboardOpen]);
 
   // Reset textarea height when prompt is cleared
   useEffect(() => {
