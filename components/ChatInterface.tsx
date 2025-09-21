@@ -278,7 +278,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           left: isPWA ? '0' : 'auto',
           right: isPWA ? '0' : 'auto',
           bottom: isPWA ? (isKeyboardOpen ? `${inputOffset}px` : '80px') : 'auto',
-          height: isPWA ? `calc(100vh - 60px - ${isKeyboardOpen ? inputOffset : 80}px)` : 'auto'
+          height: isPWA ? `calc(100vh - 60px - ${isKeyboardOpen ? inputOffset : 80}px)` : 'auto',
+          zIndex: 10 // Ensure main content stays below footer
         }}
       >
         {messages.length === 0 && !currentAiResponse ? (
@@ -353,6 +354,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       textareaRef.current.scrollIntoView = () => {}; // Disable scrollIntoView
                     }
                   }, 0);
+                }
+                
+                // Prevent textarea from breaking out of footer
+                if (textareaRef.current) {
+                  const textarea = textareaRef.current;
+                  const footer = textarea.closest('footer');
+                  if (footer) {
+                    // Ensure footer stays fixed
+                    footer.style.position = 'fixed';
+                    footer.style.bottom = isKeyboardOpen ? `${keyboardHeight}px` : '0px';
+                    footer.style.left = '0';
+                    footer.style.right = '0';
+                    footer.style.zIndex = '30';
+                    footer.style.overflow = 'hidden';
+                    
+                    // Ensure textarea stays within footer
+                    textarea.style.position = 'relative';
+                    textarea.style.zIndex = '32';
+                    textarea.style.transform = 'none';
+                  }
                 }
                 
                 // Force keyboard detection on focus

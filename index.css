@@ -101,6 +101,45 @@ html, body {
     z-index: 30 !important;
   }
 
+  /* Prevent textarea from breaking out of footer */
+  footer {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 30 !important;
+    overflow: hidden !important;
+  }
+
+  footer form {
+    position: relative !important;
+    z-index: 31 !important;
+    overflow: hidden !important;
+  }
+
+  footer textarea {
+    position: relative !important;
+    z-index: 32 !important;
+    transform: none !important;
+    max-height: 100px !important;
+    overflow-y: auto !important;
+    isolation: isolate !important;
+    contain: layout style !important;
+  }
+
+  /* Prevent main content from affecting footer */
+  main {
+    z-index: 10 !important;
+    position: relative !important;
+  }
+
+  /* Ensure footer is completely isolated */
+  footer {
+    isolation: isolate !important;
+    contain: layout style !important;
+    will-change: bottom !important;
+  }
+
   /* Ensure input stays visible when keyboard is open */
   input:focus, textarea:focus {
     transform: translateZ(0);
