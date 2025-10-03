@@ -40,7 +40,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onSave, onClose
     setVerificationStatus('verifying');
 
     try {
-      const isValid = await verifyApiKey(currentSettings.apiKey);
+      const isValid = await verifyApiKey(currentSettings.apiKey, currentSettings.model);
       setVerificationStatus(isValid ? 'valid' : 'invalid');
     } catch (error) {
       console.error('API key verification error:', error);
@@ -123,6 +123,24 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onSave, onClose
           </div>
 
           <div className="animate-slideUp" style={{ animationDelay: '0.1s' }}>
+            <label htmlFor="model" className="block text-base font-semibold text-text-primary mb-3">
+              Gemini Model
+            </label>
+            <select
+              id="model"
+              value={currentSettings.model}
+              onChange={(e) => setCurrentSettings({ ...currentSettings, model: e.target.value })}
+              className="w-full glass-input rounded-xl p-3 sm:p-4 text-text-primary focus:outline-none text-sm sm:text-base border border-border focus:border-accent"
+            >
+              <option value="gemini-flash-latest">Gemini Flash Latest</option>
+              <option value="gemini-flash-lite-latest">Gemini Flash Lite Latest</option>
+            </select>
+            <p className="mt-2 text-sm text-text-secondary">
+              Choose between the full Gemini Flash model or the lighter Flash Lite version for faster responses.
+            </p>
+          </div>
+
+          <div className="animate-slideUp" style={{ animationDelay: '0.2s' }}>
             <label className="block text-base font-semibold text-text-primary mb-3">
               Select Vault Folder
             </label>
@@ -151,14 +169,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onSave, onClose
           <button
             onClick={onClear}
             className="bg-error text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl hover:bg-error/90 transition-all duration-200 text-sm sm:text-base hover:shadow-glow animate-slideUp order-2 sm:order-1"
-            style={{ animationDelay: '0.2s' }}
+            style={{ animationDelay: '0.3s' }}
           >
             Clear All
           </button>
           <button
             onClick={handleSave}
             className="bg-gradient-accent text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl hover:shadow-glow-lg transition-all duration-200 text-sm sm:text-base animate-slideUp order-1 sm:order-2"
-            style={{ animationDelay: '0.3s' }}
+            style={{ animationDelay: '0.4s' }}
           >
             Save Settings
           </button>

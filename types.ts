@@ -7,6 +7,7 @@ export interface ChatMessage {
 export interface Settings {
   apiKey: string;
   vaultSource: 'local';
+  model: string;
 }
 
 export interface VaultFile {

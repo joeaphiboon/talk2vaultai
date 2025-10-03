@@ -11,6 +11,7 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<Settings>({
     apiKey: '',
     vaultSource: 'local',
+    model: 'gemini-flash-latest',
   });
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [vaultFiles, setVaultFiles] = useState<VaultFile[]>([]);
@@ -68,6 +69,7 @@ const App: React.FC = () => {
     setSettings({
       apiKey: '',
       vaultSource: 'local',
+      model: 'gemini-flash-latest',
     });
     setVaultFiles([]);
     setMessages([]);
@@ -125,7 +127,7 @@ const App: React.FC = () => {
 ${file.content}`).join('\n\n');
 
     try {
-      const stream = await getStreamingResponse(prompt, context, settings.apiKey);
+      const stream = await getStreamingResponse(prompt, context, settings.apiKey, settings.model);
       
       let fullResponse = '';
       for await (const chunk of stream) {

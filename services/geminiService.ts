@@ -5,10 +5,10 @@ let ai: GoogleGenAI | null = null;
 let chat: Chat | null = null;
 let currentApiKey: string | null = null;
 
-const initializeGemini = (apiKey: string) => {
+const initializeGemini = (apiKey: string, model: string = 'gemini-flash-latest') => {
   ai = new GoogleGenAI({ apiKey });
   chat = ai.chats.create({
-    model: 'gemini-2.5-flash',
+    model: model,
     config: {
       systemInstruction: `You are an intelligent assistant for a user's personal notes from their Obsidian vault. Your task is to answer the user's questions based ONLY on the context provided from their notes.
 - Analyze the user's question and the provided context carefully.
@@ -21,11 +21,11 @@ const initializeGemini = (apiKey: string) => {
   currentApiKey = apiKey;
 };
 
-export const verifyApiKey = async (apiKey: string): Promise<boolean> => {
+export const verifyApiKey = async (apiKey: string, model: string = 'gemini-flash-latest'): Promise<boolean> => {
   try {
     const testAI = new GoogleGenAI({ apiKey });
     const testChat = testAI.chats.create({
-      model: 'gemini-2.5-flash',
+      model: model,
       config: {
         systemInstruction: "You are a test assistant. Respond with 'OK' to verify the API key is working.",
       },
@@ -43,10 +43,11 @@ export const getStreamingResponse = async (
   prompt: string,
   context: string,
   apiKey: string,
+  model: string = 'gemini-flash-latest',
 ) => {
   // Initialize or reinitialize if API key has changed
   if (!chat || currentApiKey !== apiKey) {
-    initializeGemini(apiKey);
+    initializeGemini(apiKey, model);
   }
 
   if (!chat) {
