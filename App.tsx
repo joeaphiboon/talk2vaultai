@@ -6,6 +6,7 @@ import InstallPrompt from './components/InstallPrompt';
 import { getStreamingResponse } from './services/geminiService';
 import { readFilesFromInput } from './services/fileService';
 import { loadSettings, saveSettings, clearSettings, loadVaultFiles, saveVaultFiles } from './services/storageService';
+import { UsageSnapshot, subscribeToUsage, resetUsage } from './services/usageService';
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<Settings>({
@@ -19,6 +20,7 @@ const App: React.FC = () => {
   const [currentAiResponse, setCurrentAiResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [usage, setUsage] = useState<UsageSnapshot>({ requestCount: 0, tokenCount: 0 });
 
   // Mobile viewport height fix
   useEffect(() => {
@@ -57,6 +59,13 @@ const App: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = subscribeToUsage(setUsage);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   const handleSaveSettings = (newSettings: Settings) => {
     setSettings(newSettings);
     saveSettings(newSettings);
@@ -74,6 +83,7 @@ const App: React.FC = () => {
     setVaultFiles([]);
     setMessages([]);
     setError('');
+    resetUsage();
   };
 
   const handleClearConversation = () => {
@@ -169,6 +179,7 @@ ${file.content}`).join('\n\n');
         onClearConversation={handleClearConversation}
         vaultFileCount={vaultFiles.length}
         hasApiKey={!!settings.apiKey.trim()}
+        usage={usage}
       />
       {isSettingsModalOpen && (
         <SettingsModal

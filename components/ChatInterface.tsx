@@ -12,6 +12,10 @@ interface ChatInterfaceProps {
   error: string;
   vaultFileCount: number;
   hasApiKey: boolean;
+  usage: {
+    requestCount: number;
+    tokenCount: number;
+  };
   onSubmit: (prompt: string) => void;
   onSettingsClick: () => void;
   onClearConversation: () => void;
@@ -24,6 +28,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   error,
   vaultFileCount,
   hasApiKey,
+  usage,
   onSubmit,
   onSettingsClick,
   onClearConversation,
@@ -74,6 +79,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-secondary/50 rounded-lg border border-border">
             <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse"></div>
             <span className="text-xs text-text-secondary">{vaultFileCount} notes</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-secondary/50 rounded-lg border border-border">
+            <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse"></div>
+            <span className="text-xs text-text-secondary">{usage.requestCount} req / {usage.tokenCount} tokens</span>
           </div>
           {messages.length > 0 && (
             <button 

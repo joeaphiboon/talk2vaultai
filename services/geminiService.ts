@@ -1,5 +1,6 @@
 
 import { GoogleGenAI, Chat } from "@google/genai";
+import { incrementRequestCount, addTokenUsage } from "./usageService";
 
 let ai: GoogleGenAI | null = null;
 let chat: Chat | null = null;
@@ -58,7 +59,26 @@ export const getStreamingResponse = async (
 
   try {
     const response = await chat.sendMessageStream({ message: fullPrompt });
-    return response;
+    incrementRequestCount();
+
+    let lastTotalTokenCount = 0;
+
+    async function* usageWrappedStream() {
+      for await (const chunk of response) {
+        const usageMetadata = (chunk as any)?.usageMetadata;
+        if (usageMetadata && typeof usageMetadata.totalTokenCount === 'number') {
+          const additionalTokens = usageMetadata.totalTokenCount - lastTotalTokenCount;
+          if (additionalTokens > 0) {
+            addTokenUsage(additionalTokens);
+            lastTotalTokenCount = usageMetadata.totalTokenCount;
+          }
+        }
+
+        yield chunk;
+      }
+    }
+
+    return usageWrappedStream();
   } catch (error) {
     console.error("Error sending message to Gemini:", error);
     // Reset on error to allow re-initialization on the next call.
