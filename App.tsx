@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChatMessage, Settings, VaultFile } from './types';
+import { ChatMessage, Settings, VaultFile, UsageStatus } from './types';
 import ChatInterface from './components/ChatInterface';
 import SettingsModal from './components/SettingsModal';
 import InstallPrompt from './components/InstallPrompt';
@@ -7,7 +7,7 @@ import InstallPrompt from './components/InstallPrompt';
 import { getOrCreateGuestId } from './services/geminiService'; // Import guest ID helper
 import { readFilesFromInput } from './services/fileService';
 import { loadSettings, saveSettings, clearSettings, loadVaultFiles, saveVaultFiles } from './services/storageService';
-// Removed: import { UsageSnapshot, subscribeToUsage, resetUsage } from './services/usageService';
+import { fetchUsageStatus } from './services/usageService';
 
 const App: React.FC = () => {
   // Removed apiKey from settings state
@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [currentAiResponse, setCurrentAiResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [usage, setUsage] = useState<UsageStatus | null>(null);
 
 
   // Mobile viewport height fix
@@ -61,6 +62,16 @@ const App: React.FC = () => {
     if (savedVaultFiles.length > 0) {
       setVaultFiles(savedVaultFiles);
     }
+  }, []);
+
+  // Fetch usage on mount and every 30s
+  useEffect(() => {
+    const load = async () => {
+      try { setUsage(await fetchUsageStatus()); } catch {}
+    };
+    load();
+    const id = setInterval(load, 30000);
+    return () => clearInterval(id);
   }, []);
 
 
@@ -173,6 +184,12 @@ const App: React.FC = () => {
       const data = await response.json();
       const fullResponse: string = typeof data === 'string' ? data : (data?.response ?? '');
       setCurrentAiResponse(fullResponse);
+      // Update usage if present in response; otherwise refresh
+      if (data?.rateLimit && data?.quota) {
+        setUsage({ rateLimit: data.rateLimit, quota: data.quota });
+      } else {
+        try { setUsage(await fetchUsageStatus()); } catch {}
+      }
 
       const aiMessage: ChatMessage = { role: 'model', content: fullResponse };
       setMessages(prev => [...prev, aiMessage]);
@@ -207,6 +224,7 @@ const App: React.FC = () => {
         onClearConversation={handleClearConversation}
         vaultFileCount={vaultFiles.length}
         // Removed hasApiKey prop
+        usage={usage || undefined}
       />
       {isSettingsModalOpen && (
         <SettingsModal

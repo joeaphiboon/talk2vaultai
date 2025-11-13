@@ -14,6 +14,7 @@ interface ChatInterfaceProps {
   onSubmit: (prompt: string) => void;
   onSettingsClick: () => void;
   onClearConversation: () => void;
+  usage?: import('../types').UsageStatus;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -26,6 +27,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSubmit,
   onSettingsClick,
   onClearConversation,
+  usage,
 }) => {
   const [prompt, setPrompt] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -70,7 +72,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <h1 className="text-lg sm:text-xl font-bold text-text-primary">Talk2MyVault</h1>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          
+          {usage && (
+            <div className="text-xs text-text-secondary px-2 py-1 rounded-lg border border-border/60">
+              RL {usage.rateLimit.remaining}/{usage.rateLimit.limit} · {usage.quota.mode === 'count' ? `Free ${usage.quota.remaining ?? 0}/${usage.quota.total ?? 0}` : `Window ${usage.quota.windowMinutes}m`}
+            </div>
+          )}
           
           {messages.length > 0 && (
             <button 
