@@ -155,31 +155,25 @@ const App: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        // Handle quota exceeded (403) or other errors
-        if (response.status === 403) {
-          // Display the error message from the backend (e.g., quota exceeded)
-          throw new Error(errorData.message || 'Quota exceeded. Please sign up or contact support.');
+        // Try to parse JSON error; if HTML (e.g., 404), fall back to text
+        let message = '';
+        try {
+          const errorData = await response.json();
+          message = errorData.message || '';
+        } catch {
+          message = await response.text();
         }
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        if (response.status === 403) {
+          throw new Error(message || 'Quota exceeded. Please sign up or contact support.');
+        }
+        throw new Error(message || `HTTP error! status: ${response.status}`);
       }
 
-      // Handle streaming response
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('Failed to get response stream.');
-      }
+      // Expect JSON payload { response: string }
+      const data = await response.json();
+      const fullResponse: string = typeof data === 'string' ? data : (data?.response ?? '');
+      setCurrentAiResponse(fullResponse);
 
-      let fullResponse = '';
-      const decoder = new TextDecoder();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        fullResponse += chunk;
-        setCurrentAiResponse(fullResponse);
-      }
-      
       const aiMessage: ChatMessage = { role: 'model', content: fullResponse };
       setMessages(prev => [...prev, aiMessage]);
 
