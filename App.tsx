@@ -14,7 +14,7 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<Settings>({
     // apiKey: '', // Removed
     vaultSource: 'local',
-    model: 'gemini-flash-latest', // Model might still be relevant for frontend to pass to backend if backend supports dynamic model selection
+    model: 'gemini-1.5-flash-8b-latest', // Default to Gemini Flash Lite (8B) latest
   });
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [vaultFiles, setVaultFiles] = useState<VaultFile[]>([]);
@@ -77,7 +77,7 @@ const App: React.FC = () => {
     setSettings({
       // apiKey: '', // Removed
       vaultSource: 'local',
-      model: 'gemini-flash-latest',
+      model: 'gemini-1.5-flash-8b-latest',
     });
   };
 

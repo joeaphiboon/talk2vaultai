@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 // Minimal serverless function for Vercel (Node-based) without external quotas/auth
 // Expects env var AI_API_KEY to be set in Vercel Project settings
@@ -15,23 +15,47 @@ export default async function handler(req: any, res: any) {
   }
 
   // Support JSON bodies only
-  const { prompt } = req.body || {};
+  const { prompt, model: requestedModel } = req.body || {};
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ message: 'Prompt is required' });
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(AI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    const genAI = new GoogleGenAI({ apiKey: AI_API_KEY });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = await response.text();
+    // Default to "Gemini Flash Lite latest" (8B variant)
+    const defaultModel = 'gemini-1.5-flash-8b-latest';
 
-    return res.status(200).json({ response: text });
-  } catch (error: any) {
-    console.error('[api/proxy/chat] Error:', error?.message || error);
-    const msg = typeof error?.message === 'string' ? error.message : 'Failed to get response from AI. Please try again later.';
+    // Try requested model first (if provided), then common fallbacks
+    const candidates = Array.from(new Set([
+      requestedModel,
+      defaultModel,
+      'gemini-1.5-flash-8b',
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-pro',
+      'gemini-1.0-pro',
+    ].filter(Boolean)));
+
+    let lastErr: any = null;
+    for (const name of candidates) {
+      try {
+        const model = genAI.getGenerativeModel({ model: name });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = await response.text();
+        return res.status(200).json({ response: text, model: name });
+      } catch (e: any) {
+        lastErr = e;
+        // Continue trying next model on 404/unsupported
+        if (!(e?.message && /not found|unsupported|404/i.test(e.message))) {
+          // For other errors (auth/network), break early
+          break;
+        }
+      }
+    }
+
+    const msg = lastErr?.message || 'Failed to get response from AI. Please try again later.';
     // If the error likely relates to auth/key, surface a clearer message
     if (/api key|unauthorized|invalid key|permission/i.test(msg)) {
       return res.status(403).json({ message: 'AI service authentication failed. Verify AI_API_KEY in project settings.' });
