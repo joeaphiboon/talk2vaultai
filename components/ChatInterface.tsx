@@ -11,11 +11,6 @@ interface ChatInterfaceProps {
   isLoading: boolean;
   error: string;
   vaultFileCount: number;
-  // Removed: hasApiKey: boolean;
-  usage: {
-    requestCount: number;
-    tokenCount: number;
-  };
   onSubmit: (prompt: string) => void;
   onSettingsClick: () => void;
   onClearConversation: () => void;
@@ -28,7 +23,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   error,
   vaultFileCount,
   // Removed: hasApiKey,
-  usage,
   onSubmit,
   onSettingsClick,
   onClearConversation,
@@ -76,14 +70,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <h1 className="text-lg sm:text-xl font-bold text-text-primary">Talk2MyVault</h1>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-secondary/50 rounded-lg border border-border">
-            <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse"></div>
-            <span className="text-xs text-text-secondary">{vaultFileCount} notes</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-secondary/50 rounded-lg border border-border">
-            <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse"></div>
-            <span className="text-xs text-text-secondary">{usage.requestCount} req / {usage.tokenCount} tokens</span>
-          </div>
+          
+          
           {messages.length > 0 && (
             <button 
               onClick={onClearConversation}
@@ -108,7 +96,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
-            // Removed hasApiKey prop
             hasVaultFiles={vaultFileCount > 0}
           />
         ) : (

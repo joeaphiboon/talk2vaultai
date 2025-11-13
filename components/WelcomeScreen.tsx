@@ -1,13 +1,9 @@
-import React from 'react';
-import { AppIcon } from './Icons';
-
 interface WelcomeScreenProps {
   onSettingsClick: () => void;
-  hasApiKey: boolean;
   hasVaultFiles: boolean;
 }
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onSettingsClick, hasApiKey, hasVaultFiles }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onSettingsClick, hasVaultFiles }) => {
   return (
     <div className="welcome-screen flex items-center justify-center p-6 h-full min-h-full w-full">
       <div className="text-center max-w-md mx-auto">
@@ -29,26 +25,16 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onSettingsClick, hasApiKe
         </p>
 
         {/* Setup Status */}
-        {(!hasApiKey || !hasVaultFiles) && (
-          <div className="space-y-3 mb-6">
-            {!hasApiKey && (
-              <div className="flex items-center justify-center gap-3">
-                <div className="w-2 h-2 bg-error rounded-full"></div>
-                <span className="text-sm text-text-secondary">API Key Required</span>
-              </div>
-            )}
-            {!hasVaultFiles && (
-              <div className="flex items-center justify-center gap-3">
-                <div className="w-2 h-2 bg-warning rounded-full"></div>
-                <span className="text-sm text-text-secondary">Vault Files Not Selected</span>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="space-y-3 mb-6">
+          {!hasVaultFiles && (
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-2 h-2 bg-warning rounded-full"></div>
+              <span className="text-sm text-text-secondary">Vault Files Not Selected</span>
+            </div>
+          )}
+        </div>
 
-        {hasApiKey && hasVaultFiles && (
-          <p className="text-text-secondary">Ready to chat with your notes!</p>
-        )}
+        <p className="text-text-secondary">Ready to chat with your notes!</p>
       </div>
     </div>
   );
