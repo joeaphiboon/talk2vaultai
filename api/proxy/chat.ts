@@ -167,7 +167,12 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ message: 'Prompt is required' });
   }
 
-  await ensureSchema();
+  try {
+    await ensureSchema();
+  } catch (e: any) {
+    console.error('ensureSchema error', e);
+    return res.status(503).json({ message: 'Database error initializing rate limiter schema', detail: e?.message || String(e) });
+  }
 
   // Identify caller (guest cookie + IP fallback)
   const cookies = parseCookies(req);
@@ -180,7 +185,14 @@ export default async function handler(req: any, res: any) {
   const rlKey = `g:${guestId}:ip:${ip}`;
 
   // Rate limit
-  const rl = await enforceRateLimit(rlKey);
+  let rl;
+  try {
+    rl = await enforceRateLimit(rlKey);
+  } catch (e: any) {
+    console.error('enforceRateLimit error', e);
+    // Fail-open on RL to avoid blocking users due to transient DB issues
+    rl = { allowed: true, remaining: RATE_LIMIT_PER_MINUTE, retryAfter: 0, limit: RATE_LIMIT_PER_MINUTE };
+  }
   res.setHeader('X-RateLimit-Limit', (rl.limit ?? RATE_LIMIT_PER_MINUTE).toString());
   res.setHeader('X-RateLimit-Remaining', Math.max(0, rl.remaining).toString());
   if (!rl.allowed) {
@@ -189,7 +201,13 @@ export default async function handler(req: any, res: any) {
   }
 
   // Guest quota
-  const quota = await enforceGuestQuota(guestId);
+  let quota;
+  try {
+    quota = await enforceGuestQuota(guestId);
+  } catch (e: any) {
+    console.error('enforceGuestQuota error', e);
+    return res.status(503).json({ message: 'Database error enforcing guest quota', detail: e?.message || String(e) });
+  }
   if (!quota.allowed) {
     return res.status(403).json({ message: 'Free quota exceeded. Please sign up to continue.', remaining: quota.remaining });
   }
@@ -254,7 +272,9 @@ QUESTION: ${prompt}`
       return res.status(403).json({ message: 'AI service authentication failed. Verify AI_API_KEY in project settings.' });
     }
     return res.status(500).json({ message: msg });
-  } catch (err) {
-    return res.status(500).json({ message: 'Unexpected server error.' });
+  } catch (err: any) {
+    console.error('chat handler error', err);
+    const msg = err?.message || 'Unexpected server error.';
+    return res.status(500).json({ message: msg });
   }
 }
