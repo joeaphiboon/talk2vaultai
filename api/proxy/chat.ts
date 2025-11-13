@@ -165,8 +165,8 @@ export default async function handler(req: any, res: any) {
   try {
     await ensureSchema();
   } catch (e: any) {
-    console.error('ensureSchema error', e);
-    return res.status(503).json({ message: 'Database error initializing rate limiter schema', detail: e?.message || String(e) });
+    // Do not block chat if schema creation fails; rate limiter will fail-open below.
+    console.error('ensureSchema error (continuing without RL schema)', e);
   }
 
   // Identify caller (guest cookie + IP fallback)

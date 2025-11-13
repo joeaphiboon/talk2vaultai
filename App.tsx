@@ -171,7 +171,8 @@ const App: React.FC = () => {
         const clone = response.clone();
         try {
           const errorData = await response.json();
-          message = (errorData && errorData.message) || '';
+          const detail = (errorData && (errorData.detail || errorData.error)) || '';
+          message = [errorData?.message, detail].filter(Boolean).join(' - ');
         } catch {
           try { message = await clone.text(); } catch { message = ''; }
         }
