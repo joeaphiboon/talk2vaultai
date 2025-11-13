@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { IncomingMessage, ServerResponse } from 'http';
-import { sql } from '@vercel/postgres';
+import { sql } from '../../lib/db';
 import crypto from 'crypto';
 
 // Environment
@@ -14,7 +14,6 @@ const GUEST_COOKIE_NAME = 'guest_id';
 // Prefer POSTGRES_URL if present (Vercel), otherwise fall back to DATABASE_URL (e.g., Supabase)
 const RAW_DB_URL = process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
 function ensureSslmode(url: string) {
-  // For Supabase and many hosted Postgres, SSL is required. Add sslmode=require if missing.
   try {
     const u = new URL(url);
     if (!u.searchParams.has('sslmode')) u.searchParams.set('sslmode', 'require');
@@ -25,10 +24,6 @@ function ensureSslmode(url: string) {
   }
 }
 const DB_URL = RAW_DB_URL ? ensureSslmode(RAW_DB_URL) : '';
-if (DB_URL && !process.env.POSTGRES_URL) {
-  process.env.POSTGRES_URL = DB_URL; // Ensure @vercel/postgres picks it up
-}
-const db = sql as typeof sql;
 
 // Ensure schema exists once per cold start
 let schemaEnsured = false;

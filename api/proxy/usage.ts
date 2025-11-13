@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'http';
-import { sql } from '@vercel/postgres';
+import { sql } from '../../lib/db';
 
 const RATE_LIMIT_PER_MINUTE = parseInt(process.env.RATE_LIMIT_PER_MINUTE || '5', 10);
 const FREE_QUOTA_WINDOW_MINUTES = parseInt(process.env.FREE_QUOTA_WINDOW_MINUTES || '0', 10);
@@ -18,10 +18,6 @@ function ensureSslmode(url: string) {
   }
 }
 const DB_URL = RAW_DB_URL ? ensureSslmode(RAW_DB_URL) : '';
-if (DB_URL && !process.env.POSTGRES_URL) {
-  process.env.POSTGRES_URL = DB_URL;
-}
-const db = sql as typeof sql;
 
 function parseCookies(req: IncomingMessage): Record<string, string> {
   const header = req.headers['cookie'];
