@@ -15,10 +15,21 @@ export default async function handler(req: any, res: any) {
   }
 
   // Support JSON bodies only
-  const { prompt, model: requestedModel } = req.body || {};
+  const { prompt, model: requestedModel, context } = req.body || {};
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ message: 'Prompt is required' });
   }
+
+  // Build a combined prompt that includes the vault context if provided
+  const combinedPrompt = typeof context === 'string' && context.trim().length > 0
+    ? `You are an assistant answering based on the provided vault notes context below. If the answer is not in the context, say you don't know.
+
+CONTEXT START
+${context}
+CONTEXT END
+
+QUESTION: ${prompt}`
+    : prompt;
 
   try {
     const genAI = new GoogleGenerativeAI(AI_API_KEY);
@@ -41,7 +52,7 @@ export default async function handler(req: any, res: any) {
     for (const name of candidates) {
       try {
         const model = genAI.getGenerativeModel({ model: name });
-        const result = await model.generateContent(prompt);
+        const result = await model.generateContent(combinedPrompt);
         const response = await result.response;
         const text = await response.text();
         return res.status(200).json({ response: text, model: name });
