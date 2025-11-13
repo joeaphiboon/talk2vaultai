@@ -3,16 +3,18 @@ import { ChatMessage, Settings, VaultFile } from './types';
 import ChatInterface from './components/ChatInterface';
 import SettingsModal from './components/SettingsModal';
 import InstallPrompt from './components/InstallPrompt';
-import { getStreamingResponse } from './services/geminiService';
+// Removed: import { getStreamingResponse } from './services/geminiService';
+import { getOrCreateGuestId } from './services/geminiService'; // Import guest ID helper
 import { readFilesFromInput } from './services/fileService';
 import { loadSettings, saveSettings, clearSettings, loadVaultFiles, saveVaultFiles } from './services/storageService';
-import { UsageSnapshot, subscribeToUsage, resetUsage } from './services/usageService';
+// Removed: import { UsageSnapshot, subscribeToUsage, resetUsage } from './services/usageService';
 
 const App: React.FC = () => {
+  // Removed apiKey from settings state
   const [settings, setSettings] = useState<Settings>({
-    apiKey: '',
+    // apiKey: '', // Removed
     vaultSource: 'local',
-    model: 'gemini-flash-latest',
+    model: 'gemini-flash-latest', // Model might still be relevant for frontend to pass to backend if backend supports dynamic model selection
   });
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [vaultFiles, setVaultFiles] = useState<VaultFile[]>([]);
@@ -20,7 +22,7 @@ const App: React.FC = () => {
   const [currentAiResponse, setCurrentAiResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-  const [usage, setUsage] = useState<UsageSnapshot>({ requestCount: 0, tokenCount: 0 });
+
 
   // Mobile viewport height fix
   useEffect(() => {
@@ -50,7 +52,9 @@ const App: React.FC = () => {
   useEffect(() => {
     const savedSettings = loadSettings();
     if (savedSettings) {
-      setSettings(savedSettings);
+      // Ensure apiKey is not loaded from old settings if it's no longer managed client-side
+      const { apiKey, ...restOfSettings } = savedSettings;
+      setSettings(restOfSettings);
     }
     
     const savedVaultFiles = loadVaultFiles();
@@ -59,16 +63,11 @@ const App: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    const unsubscribe = subscribeToUsage(setUsage);
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+
 
   const handleSaveSettings = (newSettings: Settings) => {
     setSettings(newSettings);
-    saveSettings(newSettings);
+    saveSettings(newSettings); // Save settings that are still client-managed (e.g., model, vaultSource)
     setIsSettingsModalOpen(false);
     setError('');
   };
@@ -76,14 +75,10 @@ const App: React.FC = () => {
   const handleClearSettings = () => {
     clearSettings();
     setSettings({
-      apiKey: '',
+      // apiKey: '', // Removed
       vaultSource: 'local',
       model: 'gemini-flash-latest',
     });
-    setVaultFiles([]);
-    setMessages([]);
-    setError('');
-    resetUsage();
   };
 
   const handleClearConversation = () => {
@@ -112,11 +107,12 @@ const App: React.FC = () => {
   const handleSubmitMessage = useCallback(async (prompt: string) => {
     if (!prompt.trim() || isLoading) return;
 
-    if (!settings.apiKey.trim()) {
-      setError('Please set your Gemini API key in the settings.');
-      setIsSettingsModalOpen(true);
-      return;
-    }
+    // Removed API key check: Backend will handle authentication/authorization
+    // if (!settings.apiKey.trim()) {
+    //   setError('Please set your Gemini API key in the settings.');
+    //   setIsSettingsModalOpen(true);
+    //   return;
+    // }
 
     if (vaultFiles.length === 0) {
       setError('Please select your Obsidian vault folder in the settings.');
@@ -137,12 +133,51 @@ const App: React.FC = () => {
 ${file.content}`).join('\n\n');
 
     try {
-      const stream = await getStreamingResponse(prompt, context, settings.apiKey, settings.model);
-      
+      // --- Call the backend proxy endpoint ---
+      const guestId = getOrCreateGuestId(); // Get guest ID for the cookie
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        // If user is logged in, you'd add an Authorization header here.
+        // For guests, the httpOnly cookie will be sent automatically.
+        // If guest_id cookie is not httpOnly, you might need to send it explicitly:
+        // 'X-Guest-ID': guestId, 
+      };
+
+      // Example: If you have a JWT token for logged-in users
+      // const authToken = localStorage.getItem('authToken'); // Or from context/auth provider
+      // if (authToken) {
+      //   headers['Authorization'] = `Bearer ${authToken}`;
+      // }
+
+      const response = await fetch('/api/proxy/chat', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ prompt, context, model: settings.model }), // Pass model if backend supports dynamic selection
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        // Handle quota exceeded (403) or other errors
+        if (response.status === 403) {
+          // Display the error message from the backend (e.g., quota exceeded)
+          throw new Error(errorData.message || 'Quota exceeded. Please sign up or contact support.');
+        }
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Failed to get response stream.');
+      }
+
       let fullResponse = '';
-      for await (const chunk of stream) {
-        const text = chunk.text;
-        fullResponse += text;
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        fullResponse += chunk;
         setCurrentAiResponse(fullResponse);
       }
       
@@ -159,7 +194,7 @@ ${file.content}`).join('\n\n');
       setIsLoading(false);
       setCurrentAiResponse('');
     }
-  }, [isLoading, vaultFiles, settings.apiKey]);
+  }, [isLoading, vaultFiles, settings.model]); // Removed settings.apiKey dependency
 
   return (
     <div className="bg-gradient-to-br from-background via-background to-background/50 text-text-primary h-screen flex flex-col font-sans relative overflow-hidden">
@@ -178,8 +213,7 @@ ${file.content}`).join('\n\n');
         onSettingsClick={() => setIsSettingsModalOpen(true)}
         onClearConversation={handleClearConversation}
         vaultFileCount={vaultFiles.length}
-        hasApiKey={!!settings.apiKey.trim()}
-        usage={usage}
+        // Removed hasApiKey prop
       />
       {isSettingsModalOpen && (
         <SettingsModal

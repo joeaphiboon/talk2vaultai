@@ -1,92 +1,76 @@
 
 import { GoogleGenAI, Chat } from "@google/genai";
-import { incrementRequestCount, addTokenUsage } from "./usageService";
+import { v4 as uuidv4 } from 'uuid'; // For generating guest IDs if needed client-side
 
-let ai: GoogleGenAI | null = null;
-let chat: Chat | null = null;
-let currentApiKey: string | null = null;
+// --- Constants ---
+const GUEST_COOKIE_NAME = 'guest_id'; // Should match backend
 
-const initializeGemini = (apiKey: string, model: string = 'gemini-flash-latest') => {
-  ai = new GoogleGenAI({ apiKey });
-  chat = ai.chats.create({
-    model: model,
-    config: {
-      systemInstruction: `You are an intelligent assistant for a user's personal notes from their Obsidian vault. Your task is to answer the user's questions based ONLY on the context provided from their notes.
-- Analyze the user's question and the provided context carefully.
-- Formulate your answer strictly from the information within the notes.
-- If the answer is not found in the context, you MUST explicitly state that you couldn't find the information in the notes. Do not use external knowledge or make assumptions.
-- Respond in the same language as the user's question (the app supports both English and Thai).
-- Keep your answers concise and directly relevant to the question.`,
-    },
-  });
-  currentApiKey = apiKey;
+// --- Client-side AI Service ---
+// This service will now act as a client to the backend proxy,
+// not directly to the Gemini API.
+
+// Function to get guest ID from cookie or generate a new one
+// This is needed for the frontend to send the guest_id to the backend
+export const getOrCreateGuestId = (): string => {
+    // In a real app, you'd access cookies via document.cookie or a library.
+    // For simplicity here, we'll assume a mechanism to get/set it.
+    // This part might need more robust cookie handling in a full frontend app.
+    let guestId = localStorage.getItem(GUEST_COOKIE_NAME);
+    if (!guestId) {
+        guestId = uuidv4();
+        localStorage.setItem(GUEST_COOKIE_NAME, guestId); // Store temporarily client-side for this session if cookie isn't set yet
+        // Note: The backend will set the httpOnly cookie. This client-side storage is a fallback/session helper.
+    }
+    return guestId;
 };
 
-export const verifyApiKey = async (apiKey: string, model: string = 'gemini-flash-latest'): Promise<boolean> => {
-  try {
-    const testAI = new GoogleGenAI({ apiKey });
-    const testChat = testAI.chats.create({
-      model: model,
-      config: {
-        systemInstruction: "You are a test assistant. Respond with 'OK' to verify the API key is working.",
-      },
-    });
-    
-    const response = await testChat.sendMessage({ message: "Test" });
-    return response.text === "OK";
-  } catch (error) {
-    console.error("API key verification failed:", error);
-    return false;
-  }
-};
-
+// This function will now call the backend proxy endpoint
 export const getStreamingResponse = async (
   prompt: string,
-  context: string,
-  apiKey: string,
-  model: string = 'gemini-flash-latest',
+  context: string, // Context from vault files
 ) => {
-  // Initialize or reinitialize if API key has changed
-  if (!chat || currentApiKey !== apiKey) {
-    initializeGemini(apiKey, model);
-  }
+  const guestId = getOrCreateGuestId();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    // If user is logged in, include Authorization header here
+    // 'Authorization': `Bearer ${userToken}`, 
+    // For guests, send the guest_id cookie (handled by browser for httpOnly cookies)
+    // Or explicitly pass it if not using httpOnly cookies for guest_id
+    // 'X-Guest-ID': guestId, // If not using httpOnly cookies
+  };
 
-  if (!chat) {
-    throw new Error("Gemini chat is not initialized.");
-  }
-
-  const fullPrompt = `CONTEXT FROM NOTES:\n---\n${context}\n---\n\nQUESTION: ${prompt}`;
+  // If you have a JWT for logged-in users, add it here:
+  // const userToken = localStorage.getItem('authToken'); // Example: get token from local storage
+  // if (userToken) {
+  //   headers['Authorization'] = `Bearer ${userToken}`;
+  // }
 
   try {
-    const response = await chat.sendMessageStream({ message: fullPrompt });
-    incrementRequestCount();
+    const response = await fetch('/api/proxy/chat', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ prompt, context }),
+    });
 
-    let lastTotalTokenCount = 0;
-
-    async function* usageWrappedStream() {
-      for await (const chunk of response) {
-        const usageMetadata = (chunk as any)?.usageMetadata;
-        if (usageMetadata && typeof usageMetadata.totalTokenCount === 'number') {
-          const additionalTokens = usageMetadata.totalTokenCount - lastTotalTokenCount;
-          if (additionalTokens > 0) {
-            addTokenUsage(additionalTokens);
-            lastTotalTokenCount = usageMetadata.totalTokenCount;
-          }
-        }
-
-        yield chunk;
+    if (!response.ok) {
+      const errorData = await response.json();
+      // Handle quota exceeded (403) or other errors
+      if (response.status === 403) {
+        throw new Error(errorData.message || 'Quota exceeded. Please sign up or contact support.');
       }
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
 
-    return usageWrappedStream();
-  } catch (error) {
-    console.error("Error sending message to Gemini:", error);
-    // Reset on error to allow re-initialization on the next call.
-    ai = null; 
-    chat = null;
-    if (error instanceof Error) {
-        throw new Error(`Gemini API Error: ${error.message}`);
-    }
-    throw new Error("An unknown error occurred with the Gemini API.");
+    // The response is a stream
+    return response.body?.getReader();
+
+  } catch (error: any) {
+    console.error("Error calling backend proxy:", error);
+    // Rethrow or handle specific errors
+    throw new Error(error.message || "Failed to connect to the AI service.");
   }
 };
+
+// Remove all client-side Gemini initialization, verification, and usage tracking.
+// The actual Gemini client and API key management will be on the server.
+

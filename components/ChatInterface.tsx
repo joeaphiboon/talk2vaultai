@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '../types';
 import Message from './Message';
-import { SendIcon, SettingsIcon, AppIcon, ClearIcon, PaperAirplaneIcon } from './Icons';
+import { SettingsIcon, AppIcon, ClearIcon, PaperAirplaneIcon } from './Icons';
 import LoadingSpinner from './LoadingSpinner';
 import WelcomeScreen from './WelcomeScreen';
 
@@ -11,7 +11,7 @@ interface ChatInterfaceProps {
   isLoading: boolean;
   error: string;
   vaultFileCount: number;
-  hasApiKey: boolean;
+  // Removed: hasApiKey: boolean;
   usage: {
     requestCount: number;
     tokenCount: number;
@@ -27,7 +27,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   isLoading,
   error,
   vaultFileCount,
-  hasApiKey,
+  // Removed: hasApiKey,
   usage,
   onSubmit,
   onSettingsClick,
@@ -108,7 +108,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         {messages.length === 0 && !currentAiResponse ? (
           <WelcomeScreen 
             onSettingsClick={onSettingsClick}
-            hasApiKey={hasApiKey}
+            // Removed hasApiKey prop
             hasVaultFiles={vaultFileCount > 0}
           />
         ) : (
@@ -156,7 +156,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             />
             <button
               type="submit"
-              disabled={isLoading || !prompt.trim() || !hasApiKey}
+              // Removed !hasApiKey from disabled condition
+              disabled={isLoading || !prompt.trim()}
               className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-10 my-auto mr-1 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white rounded-xl hover:scale-105 transform transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-teal-500/50 disabled:from-gray-500 disabled:to-gray-500 disabled:scale-100 shadow-lg group-hover:shadow-xl"
               aria-label="Send Message"
             >
