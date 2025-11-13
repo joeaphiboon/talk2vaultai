@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Minimal serverless function for Vercel (Node-based) without external quotas/auth
 // Expects env var AI_API_KEY to be set in Vercel Project settings
@@ -21,7 +21,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const genAI = new GoogleGenAI({ apiKey: AI_API_KEY });
+    const genAI = new GoogleGenerativeAI(AI_API_KEY);
 
     // Default to "Gemini Flash Lite latest" (8B variant)
     const defaultModel = 'gemini-1.5-flash-8b-latest';
@@ -31,10 +31,10 @@ export default async function handler(req: any, res: any) {
       requestedModel,
       defaultModel,
       'gemini-1.5-flash-8b',
-      'gemini-1.5-flash',
+      'gemini-1.5-flash-8b-exp',
       'gemini-1.5-flash-latest',
+      'gemini-1.5-flash',
       'gemini-pro',
-      'gemini-1.0-pro',
     ].filter(Boolean)));
 
     let lastErr: any = null;
