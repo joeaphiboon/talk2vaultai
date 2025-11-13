@@ -41,8 +41,33 @@ function getClientIp(req: IncomingMessage): string {
   return ip;
 }
 
+let rlSchemaEnsured = false;
+async function ensureRateLimiterSchema() {
+  if (rlSchemaEnsured) return;
+  try {
+    await db`
+      CREATE TABLE IF NOT EXISTS rate_limiter_buckets (
+        key TEXT PRIMARY KEY,
+        tokens DOUBLE PRECISION NOT NULL,
+        last_refill TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        capacity INTEGER NOT NULL,
+        refill_rate DOUBLE PRECISION NOT NULL
+      );
+    `;
+  } catch (e) {
+    // ignore; selection below will handle absence
+  }
+  rlSchemaEnsured = true;
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== 'GET') return res.status(405).json({ message: 'Method Not Allowed' });
+
+  if (!DB_URL && !process.env.POSTGRES_URL) {
+    return res.status(503).json({ message: 'Database not configured' });
+  }
+
+  await ensureRateLimiterSchema();
 
   // identify
   const cookies = parseCookies(req);
@@ -53,46 +78,66 @@ export default async function handler(req: any, res: any) {
   // token-bucket remaining (does not consume)
   const capacity = RATE_LIMIT_PER_MINUTE;
   const refill = capacity / 60;
-  const rlQuery = await db`
-    SELECT
-      CASE WHEN rb.key IS NULL THEN ${capacity}::int
-           ELSE FLOOR(LEAST(rb.capacity::float8, rb.tokens + EXTRACT(EPOCH FROM (NOW() - rb.last_refill)) * rb.refill_rate))::int
-      END AS remaining,
-      ${capacity}::int AS limit
-    FROM rate_limiter_buckets rb
-    WHERE rb.key = ${rlKey}
-  `;
-  const rlRow = rlQuery.rows[0] as { remaining?: number; limit: number } | undefined;
-  const rlRemaining = rlRow?.remaining ?? capacity;
+  let rlRemaining = capacity;
+  try {
+    const rlQuery = await db`
+      SELECT
+        CASE WHEN rb.key IS NULL THEN ${capacity}::int
+             ELSE FLOOR(LEAST(rb.capacity::float8, rb.tokens + EXTRACT(EPOCH FROM (NOW() - rb.last_refill)) * rb.refill_rate))::int
+        END AS remaining,
+        ${capacity}::int AS limit
+      FROM rate_limiter_buckets rb
+      WHERE rb.key = ${rlKey}
+    `;
+    const rlRow = rlQuery.rows[0] as { remaining?: number; limit: number } | undefined;
+    rlRemaining = rlRow?.remaining ?? capacity;
+  } catch {
+    // table might not exist yet; default full capacity
+    rlRemaining = capacity;
+  }
 
   // quota
   if (FREE_QUOTA_WINDOW_MINUTES > 0) {
-    const q = await db`
-      SELECT first_request_at
-      FROM "GuestUsage"
-      WHERE guest_id = ${guestId};
-    `;
-    const first = q.rows[0]?.first_request_at as string | undefined;
-    let windowRemainingSeconds: number | undefined = undefined;
-    if (first) {
-      const r = await db`
-        SELECT GREATEST(0, EXTRACT(EPOCH FROM ((${FREE_QUOTA_WINDOW_MINUTES}::INT || ' minutes')::INTERVAL - (NOW() - ${first}::timestamptz))))::INT AS remain;
+    try {
+      const q = await db`
+        SELECT first_request_at
+        FROM "GuestUsage"
+        WHERE guest_id = ${guestId};
       `;
-      windowRemainingSeconds = (r.rows[0] as any)?.remain ?? 0;
+      const first = q.rows[0]?.first_request_at as string | undefined;
+      let windowRemainingSeconds: number | undefined = undefined;
+      if (first) {
+        const r = await db`
+          SELECT GREATEST(0, EXTRACT(EPOCH FROM ((${FREE_QUOTA_WINDOW_MINUTES}::INT || ' minutes')::INTERVAL - (NOW() - ${first}::timestamptz))))::INT AS remain;
+        `;
+        windowRemainingSeconds = (r.rows[0] as any)?.remain ?? 0;
+      }
+      return res.status(200).json({
+        rateLimit: { limit: RATE_LIMIT_PER_MINUTE, remaining: rlRemaining },
+        quota: { type: 'guest', mode: 'window', windowMinutes: FREE_QUOTA_WINDOW_MINUTES, windowRemainingSeconds }
+      });
+    } catch {
+      return res.status(200).json({
+        rateLimit: { limit: RATE_LIMIT_PER_MINUTE, remaining: rlRemaining },
+        quota: { type: 'guest', mode: 'window', windowMinutes: FREE_QUOTA_WINDOW_MINUTES, windowRemainingSeconds: undefined }
+      });
     }
-    return res.status(200).json({
-      rateLimit: { limit: RATE_LIMIT_PER_MINUTE, remaining: rlRemaining },
-      quota: { type: 'guest', mode: 'window', windowMinutes: FREE_QUOTA_WINDOW_MINUTES, windowRemainingSeconds }
-    });
   }
 
-  const q2 = await db`
-    SELECT requests_made FROM "GuestUsage" WHERE guest_id = ${guestId};
-  `;
-  const used = (q2.rows[0]?.requests_made as number) || 0;
-  const remaining = Math.max(0, FREE_QUOTA_TOTAL - used);
-  return res.status(200).json({
-    rateLimit: { limit: RATE_LIMIT_PER_MINUTE, remaining: rlRemaining },
-    quota: { type: 'guest', mode: 'count', total: FREE_QUOTA_TOTAL, used, remaining }
-  });
+  try {
+    const q2 = await db`
+      SELECT requests_made FROM "GuestUsage" WHERE guest_id = ${guestId};
+    `;
+    const used = (q2.rows[0]?.requests_made as number) || 0;
+    const remaining = Math.max(0, FREE_QUOTA_TOTAL - used);
+    return res.status(200).json({
+      rateLimit: { limit: RATE_LIMIT_PER_MINUTE, remaining: rlRemaining },
+      quota: { type: 'guest', mode: 'count', total: FREE_QUOTA_TOTAL, used, remaining }
+    });
+  } catch {
+    return res.status(200).json({
+      rateLimit: { limit: RATE_LIMIT_PER_MINUTE, remaining: rlRemaining },
+      quota: { type: 'guest', mode: 'count', total: FREE_QUOTA_TOTAL, used: 0, remaining: FREE_QUOTA_TOTAL }
+    });
+  }
 }

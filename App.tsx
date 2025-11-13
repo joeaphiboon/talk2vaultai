@@ -166,13 +166,14 @@ const App: React.FC = () => {
       });
 
       if (!response.ok) {
-        // Try to parse JSON error; if HTML (e.g., 404), fall back to text
+        // Try to parse JSON error; if HTML, fall back to text using a clone
         let message = '';
+        const clone = response.clone();
         try {
           const errorData = await response.json();
-          message = errorData.message || '';
+          message = (errorData && errorData.message) || '';
         } catch {
-          message = await response.text();
+          try { message = await clone.text(); } catch { message = ''; }
         }
         if (response.status === 403) {
           throw new Error(message || 'Quota exceeded. Please sign up or contact support.');

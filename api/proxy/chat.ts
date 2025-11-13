@@ -157,6 +157,9 @@ export default async function handler(req: any, res: any) {
   if (!AI_API_KEY) {
     return res.status(500).json({ message: 'Server not configured: AI_API_KEY is missing.' });
   }
+  if (!DB_URL && !process.env.POSTGRES_URL) {
+    return res.status(500).json({ message: 'Database not configured: set DATABASE_URL (or POSTGRES_URL).' });
+  }
 
   // Support JSON bodies only
   const { prompt, model: requestedModel, context } = req.body || {};
