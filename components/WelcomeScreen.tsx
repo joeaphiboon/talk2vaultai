@@ -1,3 +1,5 @@
+import { AppIcon } from './Icons';
+
 interface WelcomeScreenProps {
   onSettingsClick: () => void;
   hasVaultFiles: boolean;

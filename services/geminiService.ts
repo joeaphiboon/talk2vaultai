@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Chat } from "@google/genai";
 import { v4 as uuidv4 } from 'uuid'; // For generating guest IDs if needed client-side
 
@@ -29,17 +28,15 @@ export const getStreamingResponse = async (
   prompt: string,
   context: string, // Context from vault files
 ) => {
-  const guestId = getOrCreateGuestId();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    // If user is logged in, include Authorization header here
-    // 'Authorization': `Bearer ${userToken}`, 
-    // For guests, send the guest_id cookie (handled by browser for httpOnly cookies)
-    // Or explicitly pass it if not using httpOnly cookies for guest_id
-    // 'X-Guest-ID': guestId, // If not using httpOnly cookies
+    // If user is logged in, you'd add an Authorization header here.
+    // For guests, the httpOnly cookie will be sent automatically.
+    // If guest_id cookie is not httpOnly, you might need to send it explicitly:
+    // 'X-Guest-ID': guestId, 
   };
 
-  // If you have a JWT for logged-in users, add it here:
+  // If you have a JWT token for logged-in users, add it here:
   // const userToken = localStorage.getItem('authToken'); // Example: get token from local storage
   // if (userToken) {
   //   headers['Authorization'] = `Bearer ${userToken}`;
@@ -49,7 +46,7 @@ export const getStreamingResponse = async (
     const response = await fetch('/api/proxy/chat', {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify({ prompt, context }),
+      body: JSON.stringify({ prompt, context }), // Model selection is handled server-side now
     });
 
     if (!response.ok) {
@@ -65,7 +62,7 @@ export const getStreamingResponse = async (
     return response.body?.getReader();
 
   } catch (error: any) {
-    console.error("Error calling backend proxy:", error);
+    console.error('Error calling backend proxy:', error);
     // Rethrow or handle specific errors
     throw new Error(error.message || "Failed to connect to the AI service.");
   }
@@ -73,4 +70,3 @@ export const getStreamingResponse = async (
 
 // Remove all client-side Gemini initialization, verification, and usage tracking.
 // The actual Gemini client and API key management will be on the server.
-
