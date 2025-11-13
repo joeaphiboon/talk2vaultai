@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Minimal serverless function for Vercel (Node-based) without external quotas/auth
 // Expects env var AI_API_KEY to be set in Vercel Project settings
