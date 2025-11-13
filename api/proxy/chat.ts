@@ -3,6 +3,8 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { sql } from '../../lib/db';
 import crypto from 'crypto';
 
+export const config = { runtime: 'nodejs20.x' } as const;
+
 // Environment
 const AI_API_KEY = process.env.AI_API_KEY as string;
 const RATE_LIMIT_PER_MINUTE = parseInt(process.env.RATE_LIMIT_PER_MINUTE || '5', 10); // default 5/min
