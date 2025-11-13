@@ -5,13 +5,13 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const AI_API_KEY = process.env.AI_API_KEY as string;
 
-if (!AI_API_KEY) {
-  console.warn('[api/proxy/chat] Missing AI_API_KEY environment variable.');
-}
-
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
+  if (!AI_API_KEY) {
+    return res.status(500).json({ message: 'Server not configured: AI_API_KEY is missing.' });
   }
 
   // Support JSON bodies only
@@ -30,7 +30,12 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json({ response: text });
   } catch (error: any) {
-    console.error('[api/proxy/chat] Error:', error);
-    return res.status(500).json({ message: 'Failed to get response from AI. Please try again later.' });
+    console.error('[api/proxy/chat] Error:', error?.message || error);
+    const msg = typeof error?.message === 'string' ? error.message : 'Failed to get response from AI. Please try again later.';
+    // If the error likely relates to auth/key, surface a clearer message
+    if (/api key|unauthorized|invalid key|permission/i.test(msg)) {
+      return res.status(403).json({ message: 'AI service authentication failed. Verify AI_API_KEY in project settings.' });
+    }
+    return res.status(500).json({ message: msg });
   }
 }
