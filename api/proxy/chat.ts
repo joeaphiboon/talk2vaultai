@@ -29,7 +29,7 @@ const DB_URL = RAW_DB_URL ? ensureSslmode(RAW_DB_URL) : '';
 let schemaEnsured = false;
 async function ensureSchema() {
   if (schemaEnsured) return;
-  await db`
+  await sql`
     CREATE TABLE IF NOT EXISTS rate_limiter_buckets (
       key TEXT PRIMARY KEY,
       tokens DOUBLE PRECISION NOT NULL,
@@ -73,7 +73,7 @@ function getClientIp(req: IncomingMessage): string {
 async function enforceRateLimit(key: string) {
   const capacity = RATE_LIMIT_PER_MINUTE; // max tokens
   const refill = capacity / 60; // tokens per second
-  const result = await db`
+  const result = await sql`
     WITH params AS (
       SELECT ${key}::text AS k, ${capacity}::int AS cap, ${refill}::float8 AS rf
     ), upsert AS (
@@ -112,7 +112,7 @@ async function enforceRateLimit(key: string) {
 async function enforceGuestQuota(guestId: string) {
   if (FREE_QUOTA_WINDOW_MINUTES > 0) {
     // Time window: use your GuestUsage(first_request_at) as the session start
-    const result = await db`
+    const result = await sql`
       INSERT INTO "GuestUsage" (guest_id, requests_made, first_request_at, last_request_at)
       VALUES (${guestId}, 1, NOW(), NOW())
       ON CONFLICT (guest_id)
@@ -132,7 +132,7 @@ async function enforceGuestQuota(guestId: string) {
   }
 
   // Total count mode against GuestUsage(requests_made)
-  const up = await db`
+  const up = await sql`
     INSERT INTO "GuestUsage" (guest_id, requests_made, first_request_at, last_request_at)
     VALUES (${guestId}, 1, NOW(), NOW())
     ON CONFLICT (guest_id)

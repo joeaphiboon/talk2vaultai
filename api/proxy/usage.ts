@@ -41,7 +41,7 @@ let rlSchemaEnsured = false;
 async function ensureRateLimiterSchema() {
   if (rlSchemaEnsured) return;
   try {
-    await db`
+    await sql`
       CREATE TABLE IF NOT EXISTS rate_limiter_buckets (
         key TEXT PRIMARY KEY,
         tokens DOUBLE PRECISION NOT NULL,
@@ -76,7 +76,7 @@ export default async function handler(req: any, res: any) {
   const refill = capacity / 60;
   let rlRemaining = capacity;
   try {
-    const rlQuery = await db`
+    const rlQuery = await sql`
       SELECT
         CASE WHEN rb.key IS NULL THEN ${capacity}::int
              ELSE FLOOR(LEAST(rb.capacity::float8, rb.tokens + EXTRACT(EPOCH FROM (NOW() - rb.last_refill)) * rb.refill_rate))::int
@@ -95,7 +95,7 @@ export default async function handler(req: any, res: any) {
   // quota
   if (FREE_QUOTA_WINDOW_MINUTES > 0) {
     try {
-      const q = await db`
+      const q = await sql`
         SELECT first_request_at
         FROM "GuestUsage"
         WHERE guest_id = ${guestId};
@@ -103,7 +103,7 @@ export default async function handler(req: any, res: any) {
       const first = q.rows[0]?.first_request_at as string | undefined;
       let windowRemainingSeconds: number | undefined = undefined;
       if (first) {
-        const r = await db`
+        const r = await sql`
           SELECT GREATEST(0, EXTRACT(EPOCH FROM ((${FREE_QUOTA_WINDOW_MINUTES}::INT || ' minutes')::INTERVAL - (NOW() - ${first}::timestamptz))))::INT AS remain;
         `;
         windowRemainingSeconds = (r.rows[0] as any)?.remain ?? 0;
@@ -121,7 +121,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const q2 = await db`
+    const q2 = await sql`
       SELECT requests_made FROM "GuestUsage" WHERE guest_id = ${guestId};
     `;
     const used = (q2.rows[0]?.requests_made as number) || 0;
