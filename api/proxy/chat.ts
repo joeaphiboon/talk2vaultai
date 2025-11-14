@@ -257,7 +257,7 @@ export default async function handler(req: any, res: any) {
   // TODO: This is a temporary fix for large contexts.
   // For a more robust solution, consider implementing Retrieval-Augmented Generation (RAG)
   // to intelligently select relevant parts of the context instead of truncating it.
-  const MAX_CONTEXT_LENGTH = 15000;
+  const MAX_CONTEXT_LENGTH = 100000; // Increased for testing
   let truncatedContext = context;
   if (typeof context === 'string' && context.length > MAX_CONTEXT_LENGTH) {
     truncatedContext = context.substring(0, MAX_CONTEXT_LENGTH) + '... [context truncated]';
