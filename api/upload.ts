@@ -7,10 +7,14 @@ import crypto from 'crypto';
 // Database module inlined
 let pool: Pool | null = null;
 
+// Treat the database as optional for this endpoint. If POSTGRES_URL/DATABASE_URL
+// are not configured, we'll still accept uploads and keep the vault only on the client.
+const RAW_DB_URL = process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
+
 // Reuse the same connection-string behavior as api/proxy/chat.ts so both
 // endpoints talk to the same database with consistent SSL settings.
 function getConnectionString(): string {
-  const raw = process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
+  const raw = RAW_DB_URL;
   if (!raw) return '';
   try {
     const u = new URL(raw);
@@ -87,16 +91,22 @@ export default async function handler(req: any, res: any) {
     setGuestCookie(res, guestId);
   }
 
-  // Ensure schema
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS "GuestVault" (
-        guest_id TEXT PRIMARY KEY,
-        vault_content TEXT
-      );
-    `;
-  } catch (e) {
-    console.error('Schema ensure error:', e);
+  const dbEnabled = !!RAW_DB_URL;
+
+  // Ensure schema if DB is configured
+  if (dbEnabled) {
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS "GuestVault" (
+          guest_id TEXT PRIMARY KEY,
+          vault_content TEXT
+        );
+      `;
+    } catch (e) {
+      console.error('Schema ensure error (upload, continuing without DB):', e);
+    }
+  } else {
+    console.log('Upload endpoint running without database configuration; vault will not be persisted server-side.');
   }
 
   const form = formidable({ multiples: true });
@@ -123,18 +133,31 @@ export default async function handler(req: any, res: any) {
     }
 
     if (vaultContent) {
-      try {
-        await sql`
-          INSERT INTO "GuestVault" (guest_id, vault_content)
-          VALUES (${guestId}, ${vaultContent})
-          ON CONFLICT (guest_id)
-          DO UPDATE SET vault_content = EXCLUDED.vault_content;
-        `;
-        console.log(`Stored vault for guest ${guestId}, files: ${fileList.length}, content length: ${vaultContent.length}`);
-        return res.status(200).json({ message: 'Vault uploaded successfully', files: fileList.length });
-      } catch (e) {
-        console.error('DB insert error:', e);
-        return res.status(500).json({ message: 'Database error' });
+      // If DB is configured, try to persist; otherwise just acknowledge the upload.
+      if (dbEnabled) {
+        try {
+          await sql`
+            INSERT INTO "GuestVault" (guest_id, vault_content)
+            VALUES (${guestId}, ${vaultContent})
+            ON CONFLICT (guest_id)
+            DO UPDATE SET vault_content = EXCLUDED.vault_content;
+          `;
+          console.log(`Stored vault for guest ${guestId}, files: ${fileList.length}, content length: ${vaultContent.length}`);
+          return res.status(200).json({ message: 'Vault uploaded successfully', files: fileList.length });
+        } catch (e) {
+          console.error('DB insert error (upload, continuing without DB):', e);
+          // Fall back to non-persistent success so client can still use local vault.
+          return res.status(200).json({
+            message: 'Vault uploaded (not persisted server-side due to database error)',
+            files: fileList.length,
+          });
+        }
+      } else {
+        console.log(`Vault received for guest ${guestId} with no DB configured, files: ${fileList.length}, content length: ${vaultContent.length}`);
+        return res.status(200).json({
+          message: 'Vault uploaded (local-only mode, not persisted server-side)',
+          files: fileList.length,
+        });
       }
     } else {
       console.log(`No valid .md files found for guest ${guestId}. Raw files received:`, fileList.length);
