@@ -169,9 +169,44 @@ const App: React.FC = () => {
     const userMessage: ChatMessage = { role: 'user', content: prompt };
     setMessages(prev => [...prev, userMessage]);
 
-    // Simple RAG: concatenate all file content (same as previous backup).
-    const context = vaultFiles
-      .map(file => `--- NOTE: ${file.name} ---\n${file.content}`)
+    // Simple heuristic RAG: select a limited set of relevant notes to reduce token usage.
+    const MAX_FILES = 20; // hard cap on number of notes sent per request
+    const MAX_CHARS_PER_FILE = 4000; // cap per note to avoid huge contexts
+
+    const terms = prompt
+      .toLowerCase()
+      .split(/\W+/)
+      .filter(t => t.length > 2); // ignore very short/common words
+
+    let filesToUse = vaultFiles as VaultFile[];
+
+    if (terms.length > 0) {
+      const scored = vaultFiles.map(file => {
+        const contentLower = file.content.toLowerCase();
+        let score = 0;
+        for (const term of terms) {
+          if (contentLower.includes(term)) score++;
+        }
+        return { file, score };
+      });
+
+      scored.sort((a, b) => b.score - a.score);
+      const hasHits = scored.some(s => s.score > 0);
+
+      const selected = (hasHits ? scored.filter(s => s.score > 0) : scored).slice(0, MAX_FILES);
+      filesToUse = selected.map(s => s.file);
+    } else {
+      // No meaningful terms – just take the first N files deterministically
+      filesToUse = vaultFiles.slice(0, MAX_FILES);
+    }
+
+    const context = filesToUse
+      .map(file => {
+        const trimmed = file.content.length > MAX_CHARS_PER_FILE
+          ? file.content.slice(0, MAX_CHARS_PER_FILE) + '\n...[note truncated to save tokens]...'
+          : file.content;
+        return `--- NOTE: ${file.name} ---\n${trimmed}`;
+      })
       .join('\n\n');
 
     try {
@@ -200,14 +235,27 @@ const App: React.FC = () => {
       if (!response.ok) {
         // Try to parse JSON error; if HTML, fall back to text using a clone
         let message = '';
+        let code: string | undefined;
+        let retryAfterSeconds: number | undefined;
         const clone = response.clone();
         try {
           const errorData = await response.json();
           const detail = (errorData && (errorData.detail || errorData.error)) || '';
           message = [errorData?.message, detail].filter(Boolean).join(' - ');
+          code = errorData?.code;
+          retryAfterSeconds = errorData?.retryAfterSeconds;
         } catch {
           try { message = await clone.text(); } catch { message = ''; }
         }
+
+        if (response.status === 429 || code === 'AI_QUOTA_EXCEEDED') {
+          const friendly = message || 'The free AI quota is temporarily exhausted. Please try again in a little while.';
+          const waitHint = retryAfterSeconds && retryAfterSeconds > 0
+            ? ` You may be able to try again in about ${Math.ceil(retryAfterSeconds / 60)} minutes.`
+            : '';
+          throw new Error(friendly + waitHint);
+        }
+
         if (response.status === 403) {
           throw new Error(message || 'Quota exceeded. Please sign up or contact support.');
         }

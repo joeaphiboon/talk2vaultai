@@ -98,6 +98,16 @@ async function ensureSchema() {
       vault_content TEXT
     );
   `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS "CachedAnswers" (
+      cache_key TEXT PRIMARY KEY,
+      guest_id TEXT,
+      prompt TEXT,
+      response TEXT,
+      model TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `;
   schemaEnsured = true;
 }
 
@@ -283,7 +293,8 @@ export default async function handler(req: any, res: any) {
   // TODO: This is a temporary fix for large contexts.
   // For a more robust solution, consider implementing Retrieval-Augmented Generation (RAG)
   // to intelligently select relevant parts of the context instead of truncating it.
-  const MAX_CONTEXT_LENGTH = 1_000_000; // Allow up to ~1MB of context for now
+  // Keep this relatively small so each request uses fewer input tokens.
+  const MAX_CONTEXT_LENGTH = 200_000; // ~50k tokens at most
   let truncatedContext = effectiveContext;
   if (typeof effectiveContext === 'string' && effectiveContext.length > MAX_CONTEXT_LENGTH) {
     console.log(`Effective context exceeds MAX_CONTEXT_LENGTH (${effectiveContext.length} > ${MAX_CONTEXT_LENGTH}), truncating.`);
@@ -322,10 +333,58 @@ QUESTION: ${prompt}`
     let lastErr: any = null;
     for (const name of candidates) {
       try {
+        // Simple cache: avoid re-calling the AI for identical prompt+context
+        const cacheKey = crypto
+          .createHash('sha256')
+          .update(`${guestId}::${name}::${combinedPrompt}`)
+          .digest('hex');
+
+        try {
+          const cached = await sql`
+            SELECT response
+            FROM "CachedAnswers"
+            WHERE cache_key = ${cacheKey}
+              AND created_at > NOW() - INTERVAL '7 days';
+          `;
+          const cachedResponse = (cached.rows[0] as { response?: string } | undefined)?.response;
+          if (cachedResponse) {
+            return res.status(200).json({
+              response: cachedResponse,
+              model: name,
+              rateLimit: { limit: RATE_LIMIT_PER_MINUTE, remaining: Math.max(0, rl.remaining) },
+              quota: {
+                type: 'guest',
+                mode: FREE_QUOTA_WINDOW_MINUTES > 0 ? 'window' : 'count',
+                total: FREE_QUOTA_WINDOW_MINUTES > 0 ? undefined : FREE_QUOTA_TOTAL,
+                remaining: 'remaining' in quota ? (quota as any).remaining : undefined,
+                windowMinutes: FREE_QUOTA_WINDOW_MINUTES > 0 ? FREE_QUOTA_WINDOW_MINUTES : undefined,
+              },
+              cached: true,
+            });
+          }
+        } catch (cacheErr) {
+          console.error('cache lookup error', cacheErr);
+        }
+
         const model = genAI.getGenerativeModel({ model: name });
         const result = await model.generateContent(combinedPrompt);
         const response = await result.response;
         const text = await response.text();
+
+        // Best-effort cache insert
+        try {
+          await sql`
+            INSERT INTO "CachedAnswers" (cache_key, guest_id, prompt, response, model)
+            VALUES (${cacheKey}, ${guestId}, ${combinedPrompt}, ${text}, ${name})
+            ON CONFLICT (cache_key) DO UPDATE
+              SET response = EXCLUDED.response,
+                  model = EXCLUDED.model,
+                  created_at = NOW();
+          `;
+        } catch (cacheErr) {
+          console.error('cache insert error', cacheErr);
+        }
+
         return res.status(200).json({
           response: text,
           model: name,
@@ -347,6 +406,19 @@ QUESTION: ${prompt}`
     }
 
     const msg = lastErr?.message || 'Failed to get response from AI. Please try again later.';
+
+    // Distinguish common error classes for better UX on the client.
+    if (/quota exceeded|RESOURCE_EXHAUSTED|exceeded.*quota/i.test(msg)) {
+      // Map provider quota exhaustion to HTTP 429 so the client can show a clear message.
+      const retryAfterSeconds = (lastErr as any)?.retryAfterSeconds || undefined;
+      return res.status(429).json({
+        message: 'The free AI usage quota has been exhausted for now. Please try again later or enable billing.',
+        code: 'AI_QUOTA_EXCEEDED',
+        retryAfterSeconds,
+        rawMessage: msg,
+      });
+    }
+
     if (/api key|unauthorized|invalid key|permission/i.test(msg)) {
       return res.status(403).json({ message: 'AI service authentication failed. Verify AI_API_KEY in project settings.' });
     }
