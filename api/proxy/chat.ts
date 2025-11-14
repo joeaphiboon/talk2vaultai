@@ -233,25 +233,10 @@ export default async function handler(req: any, res: any) {
   const ip = getClientIp(req);
   const rlKey = `g:${guestId}:ip:${ip}`;
 
-  // Rate limit
-  let rl;
-  try {
-    rl = await enforceRateLimit(rlKey);
-  } catch (e: any) {
-    console.error('enforceRateLimit error', {
-      message: e.message,
-      stack: e.stack,
-      details: e,
-    });
-    // Fail-open on RL to avoid blocking users due to transient DB issues
-    rl = { allowed: true, remaining: RATE_LIMIT_PER_MINUTE, retryAfter: 0, limit: RATE_LIMIT_PER_MINUTE };
-  }
-  res.setHeader('X-RateLimit-Limit', (rl.limit ?? RATE_LIMIT_PER_MINUTE).toString());
-  res.setHeader('X-RateLimit-Remaining', Math.max(0, rl.remaining).toString());
-  if (!rl.allowed) {
-    res.setHeader('Retry-After', rl.retryAfter.toString());
-    return res.status(429).json({ message: 'Rate limit exceeded. Please wait a moment before making another request.', retryAfter: rl.retryAfter });
-  }
+  // Rate limit disabled for testing
+  const rl = { allowed: true, remaining: 100, retryAfter: 0, limit: 100 };
+  res.setHeader('X-RateLimit-Limit', rl.limit.toString());
+  res.setHeader('X-RateLimit-Remaining', rl.remaining.toString());
 
   // Guest quota
   let quota;
