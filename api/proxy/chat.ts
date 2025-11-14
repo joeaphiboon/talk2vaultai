@@ -250,7 +250,7 @@ export default async function handler(req: any, res: any) {
   res.setHeader('X-RateLimit-Remaining', Math.max(0, rl.remaining).toString());
   if (!rl.allowed) {
     res.setHeader('Retry-After', rl.retryAfter.toString());
-    return res.status(429).json({ message: 'Too Many Requests. Try again later.', retryAfter: rl.retryAfter });
+    return res.status(429).json({ message: 'Rate limit exceeded. Please wait a moment before making another request.', retryAfter: rl.retryAfter });
   }
 
   // Guest quota
