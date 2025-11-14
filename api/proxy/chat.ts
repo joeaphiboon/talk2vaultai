@@ -254,6 +254,7 @@ export default async function handler(req: any, res: any) {
     return res.status(403).json({ message: 'Free quota exceeded. Please sign up to continue.', remaining: quota.remaining });
   }
 
+  console.log('Received context length:', context ? context.length : 0);
   // TODO: This is a temporary fix for large contexts.
   // For a more robust solution, consider implementing Retrieval-Augmented Generation (RAG)
   // to intelligently select relevant parts of the context instead of truncating it.
