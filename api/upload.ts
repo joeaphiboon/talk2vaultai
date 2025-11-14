@@ -125,7 +125,7 @@ export default async function handler(req: any, res: any) {
           ON CONFLICT (guest_id)
           DO UPDATE SET vault_content = EXCLUDED.vault_content;
         `;
-        console.log(`Stored vault for guest ${guestId}, length: ${vaultContent.length}`);
+        console.log(`Stored vault for guest ${guestId}, files: ${fileList.length}, content length: ${vaultContent.length}`);
         return res.status(200).json({ message: 'Vault uploaded successfully', files: fileList.length });
       } catch (e) {
         console.error('DB insert error:', e);
