@@ -1,10 +1,10 @@
 {
   "functions": {
     "api/proxy/chat.ts": {
-      "runtime": "nodejs20.x"
+      "runtime": "nodejs20"
     },
     "api/proxy/usage.ts": {
-      "runtime": "nodejs20.x"
+      "runtime": "nodejs20"
     }
   }
 }
