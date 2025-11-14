@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'http';
-import { sql } from '../../lib/db';
+import { sql } from '../lib/db';
 
 export const config = { runtime: 'nodejs20.x' } as const;
 

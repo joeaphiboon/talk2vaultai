@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { IncomingMessage, ServerResponse } from 'http';
-import { sql } from '../../lib/db';
+import { sql } from '../lib/db';
 import crypto from 'crypto';
 
 export const config = { runtime: 'nodejs20.x' } as const;
