@@ -18,6 +18,7 @@ const App: React.FC = () => {
   });
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [vaultFiles, setVaultFiles] = useState<VaultFile[]>([]);
+  const [vaultFileCount, setVaultFileCount] = useState<number>(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentAiResponse, setCurrentAiResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -103,11 +104,31 @@ const App: React.FC = () => {
       setIsLoading(true);
       setError('');
       try {
-        const files = await readFilesFromInput(fileList);
-        setVaultFiles(files);
-        saveVaultFiles(files);
+        // Send files to backend upload endpoint
+        const formData = new FormData();
+        for (let i = 0; i < fileList.length; i++) {
+          const file = fileList[i];
+          if (file.name.endsWith('.md')) {
+            formData.append('files', file);
+          }
+        }
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload vault files');
+        }
+
+        const data = await response.json();
+        setVaultFiles([]); // Clear local files since they're now on server
+        saveVaultFiles([]); // Update localStorage
+        setVaultFileCount(data.files);
+        setError(`Vault uploaded successfully: ${data.files} files`);
       } catch (e) {
-        setError('Failed to read vault files.');
+        setError('Failed to upload vault files.');
         console.error(e);
       } finally {
         setIsLoading(false);
@@ -125,11 +146,7 @@ const App: React.FC = () => {
     //   return;
     // }
 
-    if (vaultFiles.length === 0) {
-      setError('Please select your Obsidian vault folder in the settings.');
-      setIsSettingsModalOpen(true);
-      return;
-    }
+    // Vault is now stored on server, no local check needed
 
     setError('');
     setIsLoading(true);
@@ -137,10 +154,6 @@ const App: React.FC = () => {
 
     const userMessage: ChatMessage = { role: 'user', content: prompt };
     setMessages(prev => [...prev, userMessage]);
-
-    // Simple RAG: concatenate all file content.
-    // For a real app, you'd use vector search to find relevant chunks.
-    const context = vaultFiles.map(file => `--- NOTE: ${file.name} ---\n${file.content}`).join('\n\n');
 
     try {
       // --- Call the backend proxy endpoint ---
@@ -150,7 +163,7 @@ const App: React.FC = () => {
         // If user is logged in, you'd add an Authorization header here.
         // For guests, the httpOnly cookie will be sent automatically.
         // If guest_id cookie is not httpOnly, you might need to send it explicitly:
-        // 'X-Guest-ID': guestId, 
+        // 'X-Guest-ID': guestId,
       };
 
       // Example: If you have a JWT token for logged-in users
@@ -162,7 +175,7 @@ const App: React.FC = () => {
       const response = await fetch('/api/proxy/chat', {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({ prompt, context, model: settings.model }), // Pass model if backend supports dynamic selection
+        body: JSON.stringify({ prompt, model: settings.model }), // Pass model if backend supports dynamic selection
       });
 
       if (!response.ok) {
@@ -206,7 +219,7 @@ const App: React.FC = () => {
       setIsLoading(false);
       setCurrentAiResponse('');
     }
-  }, [isLoading, vaultFiles, settings.model]); // Removed settings.apiKey dependency
+  }, [isLoading, settings.model]); // Removed settings.apiKey and vaultFiles dependencies
 
   return (
     <div className="bg-gradient-to-br from-background via-background to-background/50 text-text-primary h-screen flex flex-col font-sans relative overflow-hidden">
@@ -224,7 +237,7 @@ const App: React.FC = () => {
         onSubmit={handleSubmitMessage}
         onSettingsClick={() => setIsSettingsModalOpen(true)}
         onClearConversation={handleClearConversation}
-        vaultFileCount={vaultFiles.length}
+        vaultFileCount={vaultFileCount}
         // Removed hasApiKey prop
         usage={usage || undefined}
       />
