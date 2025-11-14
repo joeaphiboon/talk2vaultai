@@ -273,11 +273,13 @@ export default async function handler(req: any, res: any) {
   // TODO: This is a temporary fix for large contexts.
   // For a more robust solution, consider implementing Retrieval-Augmented Generation (RAG)
   // to intelligently select relevant parts of the context instead of truncating it.
-  const MAX_CONTEXT_LENGTH = 100000; // Increased for testing
+  const MAX_CONTEXT_LENGTH = 1_000_000; // Allow up to ~1MB of context for now
   let truncatedContext = vaultContext;
   if (typeof vaultContext === 'string' && vaultContext.length > MAX_CONTEXT_LENGTH) {
+    console.log(`Vault context exceeds MAX_CONTEXT_LENGTH (${vaultContext.length} > ${MAX_CONTEXT_LENGTH}), truncating.`);
     truncatedContext = vaultContext.substring(0, MAX_CONTEXT_LENGTH) + '... [context truncated]';
   }
+  console.log('Using context length for prompt:', typeof truncatedContext === 'string' ? truncatedContext.length : 0);
 
   // Build a combined prompt that includes the vault context if provided
   const combinedPrompt = typeof truncatedContext === 'string' && truncatedContext.trim().length > 0
