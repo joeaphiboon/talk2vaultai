@@ -21,7 +21,7 @@ function getPool(): Pool {
   const connectionString = getConnectionString();
   if (!connectionString) throw new Error('Database URL missing');
   console.log('Creating DB pool with connection string (redacted):', connectionString.replace(/:\/\/([^:]+):([^@]+)@/, '://***:***@'));
-  pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false, checkServerIdentity: () => undefined } });
+  pool = new Pool({ connectionString, ssl: false });
   return pool;
 }
 
@@ -56,11 +56,11 @@ const RAW_DB_URL = process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
 function ensureSslmode(url: string) {
   try {
     const u = new URL(url);
-    if (!u.searchParams.has('sslmode')) u.searchParams.set('sslmode', 'require');
+    if (!u.searchParams.has('sslmode')) u.searchParams.set('sslmode', 'disable');
     return u.toString();
   } catch {
     if (!url) return url;
-    return url.includes('sslmode=') ? url : url + (url.includes('?') ? '&' : '?') + 'sslmode=require';
+    return url.includes('sslmode=') ? url : url + (url.includes('?') ? '&' : '?') + 'sslmode=disable';
   }
 }
 const DB_URL = RAW_DB_URL ? ensureSslmode(RAW_DB_URL) : '';
