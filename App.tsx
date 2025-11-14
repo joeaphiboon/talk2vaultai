@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [currentAiResponse, setCurrentAiResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [status, setStatus] = useState<string>('');
   const [usage, setUsage] = useState<UsageStatus | null>(null);
 
 
@@ -82,6 +83,7 @@ const App: React.FC = () => {
     saveSettings(newSettings); // Save settings that are still client-managed (e.g., model, vaultSource)
     setIsSettingsModalOpen(false);
     setError('');
+    setStatus('');
   };
 
   const handleClearSettings = () => {
@@ -97,12 +99,14 @@ const App: React.FC = () => {
     setMessages([]);
     setCurrentAiResponse('');
     setError('');
+    setStatus('');
   };
 
   const handleFilesSelected = async (fileList: FileList | null) => {
     if (fileList) {
       setIsLoading(true);
       setError('');
+      setStatus('');
       try {
         // Send files to backend upload endpoint
         const formData = new FormData();
@@ -126,9 +130,10 @@ const App: React.FC = () => {
         setVaultFiles([]); // Clear local files since they're now on server
         saveVaultFiles([]); // Update localStorage
         setVaultFileCount(data.files);
-        setError(`Vault uploaded successfully: ${data.files} files`);
+        setStatus(`Vault uploaded successfully: ${data.files} files`);
       } catch (e) {
         setError('Failed to upload vault files.');
+        setStatus('');
         console.error(e);
       } finally {
         setIsLoading(false);
@@ -149,6 +154,7 @@ const App: React.FC = () => {
     // Vault is now stored on server, no local check needed
 
     setError('');
+    setStatus('');
     setIsLoading(true);
     setCurrentAiResponse('');
 
@@ -234,6 +240,7 @@ const App: React.FC = () => {
         currentAiResponse={currentAiResponse}
         isLoading={isLoading}
         error={error}
+        status={status}
         onSubmit={handleSubmitMessage}
         onSettingsClick={() => setIsSettingsModalOpen(true)}
         onClearConversation={handleClearConversation}

@@ -10,6 +10,7 @@ interface ChatInterfaceProps {
   currentAiResponse: string;
   isLoading: boolean;
   error: string;
+  status?: string;
   vaultFileCount: number;
   onSubmit: (prompt: string) => void;
   onSettingsClick: () => void;
@@ -22,6 +23,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   currentAiResponse,
   isLoading,
   error,
+  status,
   vaultFileCount,
   // Removed: hasApiKey,
   onSubmit,
@@ -165,6 +167,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div className="fixed top-20 left-4 right-4 z-40">
           <div className="bg-destructive/90 text-destructive-foreground px-4 py-3 rounded-lg shadow-lg border border-destructive/20">
             {error}
+          </div>
+        </div>
+      )}
+
+      {/* Status / Success Display */}
+      {status && (
+        <div className="fixed top-32 left-4 right-4 z-40">
+          <div className="bg-emerald-600/90 text-white px-4 py-3 rounded-lg shadow-lg border border-emerald-400/70">
+            {status}
           </div>
         </div>
       )}

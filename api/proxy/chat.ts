@@ -92,6 +92,12 @@ async function ensureSchema() {
       last_request_at TIMESTAMPTZ NOT NULL
     );
   `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS "GuestVault" (
+      guest_id TEXT PRIMARY KEY,
+      vault_content TEXT
+    );
+  `;
   schemaEnsured = true;
 }
 
@@ -211,7 +217,7 @@ export default async function handler(req: any, res: any) {
   }
 
   // Support JSON bodies only
-  const { prompt, model: requestedModel, context } = req.body || {};
+  const { prompt, model: requestedModel } = req.body || {};
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ message: 'Prompt is required' });
   }
@@ -232,6 +238,15 @@ export default async function handler(req: any, res: any) {
   }
   const ip = getClientIp(req);
   const rlKey = `g:${guestId}:ip:${ip}`;
+
+  // Get vault context from DB
+  let vaultContext = '';
+  try {
+    const vault = await sql`SELECT vault_content FROM "GuestVault" WHERE guest_id = ${guestId}`;
+    vaultContext = vault.rows[0]?.vault_content || '';
+  } catch (e) {
+    console.error('Error retrieving vault:', e);
+  }
 
   // Rate limit disabled for testing
   const rl = { allowed: true, remaining: 100, retryAfter: 0, limit: 100 };
@@ -254,14 +269,14 @@ export default async function handler(req: any, res: any) {
     return res.status(403).json({ message: 'Free quota exceeded. Please sign up to continue.', remaining: quota.remaining });
   }
 
-  console.log('Received context length:', context ? context.length : 0);
+  console.log('Vault context length:', vaultContext.length);
   // TODO: This is a temporary fix for large contexts.
   // For a more robust solution, consider implementing Retrieval-Augmented Generation (RAG)
   // to intelligently select relevant parts of the context instead of truncating it.
   const MAX_CONTEXT_LENGTH = 100000; // Increased for testing
-  let truncatedContext = context;
-  if (typeof context === 'string' && context.length > MAX_CONTEXT_LENGTH) {
-    truncatedContext = context.substring(0, MAX_CONTEXT_LENGTH) + '... [context truncated]';
+  let truncatedContext = vaultContext;
+  if (typeof vaultContext === 'string' && vaultContext.length > MAX_CONTEXT_LENGTH) {
+    truncatedContext = vaultContext.substring(0, MAX_CONTEXT_LENGTH) + '... [context truncated]';
   }
 
   // Build a combined prompt that includes the vault context if provided

@@ -2,19 +2,22 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { Pool, PoolClient, QueryResult } from 'pg';
 import formidable from 'formidable';
 import fs from 'fs';
+import crypto from 'crypto';
 
 // Database module inlined
 let pool: Pool | null = null;
 
+// Reuse the same connection-string behavior as api/proxy/chat.ts so both
+// endpoints talk to the same database with consistent SSL settings.
 function getConnectionString(): string {
   const raw = process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
   if (!raw) return '';
   try {
     const u = new URL(raw);
-    if (!u.searchParams.has('sslmode')) u.searchParams.set('sslmode', 'disable');
+    if (!u.searchParams.has('sslmode')) u.searchParams.set('sslmode', 'require');
     return u.toString();
   } catch {
-    return raw.includes('sslmode=') ? raw : raw + (raw.includes('?') ? '&' : '?') + 'sslmode=disable';
+    return raw.includes('sslmode=') ? raw : raw + (raw.includes('?') ? '&' : '?') + 'sslmode=require';
   }
 }
 
@@ -22,7 +25,9 @@ function getPool(): Pool {
   if (pool) return pool;
   const connectionString = getConnectionString();
   if (!connectionString) throw new Error('Database URL missing');
-  pool = new Pool({ connectionString, ssl: false });
+  console.log('Creating DB pool for upload endpoint with connection string (redacted):',
+    connectionString.replace(/:\/\/([^:]+):([^@]+)@/, '://***:***@'));
+  pool = new Pool({ connectionString });
   return pool;
 }
 
@@ -132,6 +137,7 @@ export default async function handler(req: any, res: any) {
         return res.status(500).json({ message: 'Database error' });
       }
     } else {
+      console.log(`No valid .md files found for guest ${guestId}. Raw files received:`, fileList.length);
       return res.status(400).json({ message: 'No valid .md files found' });
     }
   });
