@@ -209,12 +209,21 @@ export default async function handler(req: any, res: any) {
     return res.status(403).json({ message: 'Free quota exceeded. Please sign up to continue.', remaining: quota.remaining });
   }
 
+  // TODO: This is a temporary fix for large contexts.
+  // For a more robust solution, consider implementing Retrieval-Augmented Generation (RAG)
+  // to intelligently select relevant parts of the context instead of truncating it.
+  const MAX_CONTEXT_LENGTH = 15000;
+  let truncatedContext = context;
+  if (typeof context === 'string' && context.length > MAX_CONTEXT_LENGTH) {
+    truncatedContext = context.substring(0, MAX_CONTEXT_LENGTH) + '... [context truncated]';
+  }
+
   // Build a combined prompt that includes the vault context if provided
-  const combinedPrompt = typeof context === 'string' && context.trim().length > 0
+  const combinedPrompt = typeof truncatedContext === 'string' && truncatedContext.trim().length > 0
     ? `You are an assistant answering based on the provided vault notes context below. If the answer is not in the context, say you don't know.
 
 CONTEXT START
-${context}
+${truncatedContext}
 CONTEXT END
 
 QUESTION: ${prompt}`
@@ -268,10 +277,13 @@ QUESTION: ${prompt}`
     if (/api key|unauthorized|invalid key|permission/i.test(msg)) {
       return res.status(403).json({ message: 'AI service authentication failed. Verify AI_API_KEY in project settings.' });
     }
-    return res.status(500).json({ message: msg });
+    if (/request is too large|token limit/i.test(msg)) {
+      return res.status(413).json({ message: 'The vault content is too large to process. Please reduce the number of files or their size.' });
+    }
+    return res.status(500).json({ message: `AI service error: ${msg}` });
   } catch (err: any) {
     console.error('chat handler error', err);
     const msg = err?.message || 'Unexpected server error.';
-    return res.status(500).json({ message: msg });
+    return res.status(500).json({ message: `Server error: ${msg}` });
   }
 }
