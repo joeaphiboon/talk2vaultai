@@ -1,7 +1,10 @@
 {
   "functions": {
-    "api/proxy/**/*.ts": {
-      "includeFiles": "lib/**"
+    "api/proxy/chat.ts": {
+      "includeFiles": "lib/db.ts"
+    },
+    "api/proxy/usage.ts": {
+      "includeFiles": "lib/db.ts"
     }
   }
 }
