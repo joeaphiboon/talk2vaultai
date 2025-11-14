@@ -90,7 +90,12 @@ export default async function handler(req: any, res: any) {
       `;
       const rlRow = rlQuery.rows[0] as { remaining?: number; limit: number } | undefined;
       rlRemaining = rlRow?.remaining ?? capacity;
-    } catch (e) {
+    } catch (e: any) {
+      console.error('usage rate limit query error', {
+        message: e.message,
+        stack: e.stack,
+        details: e,
+      });
       rlRemaining = capacity;
     }
 
@@ -115,6 +120,11 @@ export default async function handler(req: any, res: any) {
           quota: { type: 'guest', mode: 'window', windowMinutes: FREE_QUOTA_WINDOW_MINUTES, windowRemainingSeconds }
         });
       } catch (e: any) {
+        console.error('usage window quota read error', {
+          message: e.message,
+          stack: e.stack,
+          details: e,
+        });
         return res.status(200).json({
           rateLimit: { limit: RATE_LIMIT_PER_MINUTE, remaining: rlRemaining },
           quota: { type: 'guest', mode: 'window', windowMinutes: FREE_QUOTA_WINDOW_MINUTES, windowRemainingSeconds: undefined },
@@ -135,7 +145,11 @@ export default async function handler(req: any, res: any) {
         quota: { type: 'guest', mode: 'count', total: FREE_QUOTA_TOTAL, used, remaining }
       });
     } catch (e: any) {
-      console.error('usage quota error', e);
+      console.error('usage count quota read error', {
+        message: e.message,
+        stack: e.stack,
+        details: e,
+      });
       return res.status(200).json({
         rateLimit: { limit: RATE_LIMIT_PER_MINUTE, remaining: rlRemaining },
         quota: { type: 'guest', mode: 'count', total: FREE_QUOTA_TOTAL, used: 0, remaining: FREE_QUOTA_TOTAL },

@@ -186,7 +186,11 @@ export default async function handler(req: any, res: any) {
   try {
     rl = await enforceRateLimit(rlKey);
   } catch (e: any) {
-    console.error('enforceRateLimit error', e);
+    console.error('enforceRateLimit error', {
+      message: e.message,
+      stack: e.stack,
+      details: e,
+    });
     // Fail-open on RL to avoid blocking users due to transient DB issues
     rl = { allowed: true, remaining: RATE_LIMIT_PER_MINUTE, retryAfter: 0, limit: RATE_LIMIT_PER_MINUTE };
   }
@@ -202,7 +206,11 @@ export default async function handler(req: any, res: any) {
   try {
     quota = await enforceGuestQuota(guestId);
   } catch (e: any) {
-    console.error('enforceGuestQuota error', e);
+    console.error('enforceGuestQuota error', {
+      message: e.message,
+      stack: e.stack,
+      details: e,
+    });
     return res.status(503).json({ message: 'Database error enforcing guest quota', detail: e?.message || String(e) });
   }
   if (!quota.allowed) {
