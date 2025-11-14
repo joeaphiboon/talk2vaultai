@@ -56,11 +56,11 @@ const RAW_DB_URL = process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
 function ensureSslmode(url: string) {
   try {
     const u = new URL(url);
-    if (!u.searchParams.has('sslmode')) u.searchParams.set('sslmode', 'disable');
+    u.searchParams.set('sslmode', 'disable');
     return u.toString();
   } catch {
     if (!url) return url;
-    return url.includes('sslmode=') ? url : url + (url.includes('?') ? '&' : '?') + 'sslmode=disable';
+    return url.replace(/sslmode=[^&]*/, 'sslmode=disable') || url + (url.includes('?') ? '&' : '?') + 'sslmode=disable';
   }
 }
 const DB_URL = RAW_DB_URL ? ensureSslmode(RAW_DB_URL) : '';
