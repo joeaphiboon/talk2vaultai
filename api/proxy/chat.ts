@@ -23,7 +23,7 @@ function getPool(): Pool {
   const connectionString = getConnectionString();
   if (!connectionString) throw new Error('Database URL missing');
   console.log('Creating DB pool with connection string (redacted):', connectionString.replace(/:\/\/([^:]+):([^@]+)@/, '://***:***@'));
-  pool = new Pool({ connectionString, ssl: false });
+  pool = new Pool({ connectionString });
   return pool;
 }
 
