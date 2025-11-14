@@ -102,6 +102,20 @@ async function ensureRateLimiterSchema() {
   rlSchemaEnsured = true;
 }
 
+let schemaEnsured = false;
+async function ensureSchema() {
+  if (schemaEnsured) return;
+  await sql`
+    CREATE TABLE IF NOT EXISTS "GuestUsage" (
+      guest_id TEXT PRIMARY KEY,
+      requests_made INTEGER NOT NULL,
+      first_request_at TIMESTAMPTZ NOT NULL,
+      last_request_at TIMESTAMPTZ NOT NULL
+    );
+  `;
+  schemaEnsured = true;
+}
+
 export default async function handler(req: any, res: any) {
   try {
     if (req.method !== 'GET') return res.status(405).json({ message: 'Method Not Allowed' });
@@ -111,6 +125,7 @@ export default async function handler(req: any, res: any) {
     }
 
     await ensureRateLimiterSchema();
+    await ensureSchema();
 
     // identify
     const cookies = parseCookies(req);

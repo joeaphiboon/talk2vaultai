@@ -84,7 +84,14 @@ async function ensureSchema() {
       refill_rate DOUBLE PRECISION NOT NULL -- tokens per second
     );
   `;
-  // Note: Guest quota uses your existing "GuestUsage" table
+  await sql`
+    CREATE TABLE IF NOT EXISTS "GuestUsage" (
+      guest_id TEXT PRIMARY KEY,
+      requests_made INTEGER NOT NULL,
+      first_request_at TIMESTAMPTZ NOT NULL,
+      last_request_at TIMESTAMPTZ NOT NULL
+    );
+  `;
   schemaEnsured = true;
 }
 
