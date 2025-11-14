@@ -22,7 +22,8 @@ function getPool(): Pool {
   if (pool) return pool;
   const connectionString = getConnectionString();
   if (!connectionString) throw new Error('Database URL missing');
-  pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
+  console.log('Creating DB pool with connection string (redacted):', connectionString.replace(/:\/\/([^:]+):([^@]+)@/, '://***:***@'));
+  pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false, checkServerIdentity: () => undefined } });
   return pool;
 }
 
@@ -37,6 +38,7 @@ async function sql(strings: TemplateStringsArray, ...values: any[]): Promise<Que
     }
   });
   const text = textParts.join('');
+  console.log('Attempting DB connection and query');
   const client: PoolClient = await getPool().connect();
   try {
     return await client.query(text, params);
@@ -154,6 +156,7 @@ async function enforceRateLimit(key: string) {
 }
 
 async function enforceGuestQuota(guestId: string) {
+  console.log('Enforcing guest quota for guestId:', guestId);
   if (FREE_QUOTA_WINDOW_MINUTES > 0) {
     // Time window: use your GuestUsage(first_request_at) as the session start
     const result = await sql`
@@ -162,11 +165,11 @@ async function enforceGuestQuota(guestId: string) {
       ON CONFLICT (guest_id)
       DO UPDATE SET
         requests_made = CASE WHEN NOW() - COALESCE("GuestUsage".first_request_at, NOW()) <= (${FREE_QUOTA_WINDOW_MINUTES}::INT || ' minutes')::INTERVAL
-                             THEN "GuestUsage".requests_made + 1
-                             ELSE 1 END,
+                              THEN "GuestUsage".requests_made + 1
+                              ELSE 1 END,
         first_request_at = CASE WHEN NOW() - COALESCE("GuestUsage".first_request_at, NOW()) <= (${FREE_QUOTA_WINDOW_MINUTES}::INT || ' minutes')::INTERVAL
-                             THEN "GuestUsage".first_request_at
-                             ELSE NOW() END,
+                              THEN "GuestUsage".first_request_at
+                              ELSE NOW() END,
         last_request_at = NOW()
       RETURNING requests_made, first_request_at;
     `;

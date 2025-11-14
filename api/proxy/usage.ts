@@ -20,7 +20,8 @@ function getPool(): Pool {
   if (pool) return pool;
   const connectionString = getConnectionString();
   if (!connectionString) throw new Error('Database URL missing');
-  pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
+  console.log('Creating DB pool with connection string (redacted):', connectionString.replace(/:\/\/([^:]+):([^@]+)@/, '://***:***@'));
+  pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false, checkServerIdentity: () => undefined } });
   return pool;
 }
 
@@ -35,6 +36,7 @@ async function sql(strings: TemplateStringsArray, ...values: any[]): Promise<Que
     }
   });
   const text = textParts.join('');
+  console.log('Attempting DB connection and query');
   const client: PoolClient = await getPool().connect();
   try {
     return await client.query(text, params);
@@ -143,6 +145,7 @@ export default async function handler(req: any, res: any) {
 
     // quota
     if (FREE_QUOTA_WINDOW_MINUTES > 0) {
+      console.log('Reading window quota for guestId:', guestId);
       try {
         const q = await sql`
           SELECT first_request_at
@@ -176,6 +179,7 @@ export default async function handler(req: any, res: any) {
       }
     }
 
+    console.log('Reading count quota for guestId:', guestId);
     try {
       const q2 = await sql`
         SELECT requests_made FROM "GuestUsage" WHERE guest_id = ${guestId};
