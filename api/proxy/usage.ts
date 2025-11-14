@@ -47,7 +47,7 @@ async function sql(strings: TemplateStringsArray, ...values: any[]): Promise<Que
 
 export const config = { runtime: 'nodejs20.x' } as const;
 
-const RATE_LIMIT_PER_MINUTE = parseInt(process.env.RATE_LIMIT_PER_MINUTE || '5', 10);
+const RATE_LIMIT_PER_MINUTE = parseInt(process.env.RATE_LIMIT_PER_MINUTE || '100', 10);
 const FREE_QUOTA_WINDOW_MINUTES = parseInt(process.env.FREE_QUOTA_WINDOW_MINUTES || '0', 10);
 const FREE_QUOTA_TOTAL = parseInt(process.env.FREE_QUOTA_TOTAL || '30', 10);
 const GUEST_COOKIE_NAME = 'guest_id';

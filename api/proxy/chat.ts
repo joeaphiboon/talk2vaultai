@@ -51,7 +51,7 @@ export const config = { runtime: 'nodejs20.x' } as const;
 
 // Environment
 const AI_API_KEY = process.env.AI_API_KEY as string;
-const RATE_LIMIT_PER_MINUTE = parseInt(process.env.RATE_LIMIT_PER_MINUTE || '5', 10); // default 5/min
+const RATE_LIMIT_PER_MINUTE = parseInt(process.env.RATE_LIMIT_PER_MINUTE || '100', 10); // default 100/min for testing
 // Quota mode: set FREE_QUOTA_WINDOW_MINUTES > 0 for time-window access. Otherwise use FREE_QUOTA_TOTAL.
 const FREE_QUOTA_WINDOW_MINUTES = parseInt(process.env.FREE_QUOTA_WINDOW_MINUTES || '0', 10); // e.g., 10
 const FREE_QUOTA_TOTAL = parseInt(process.env.FREE_QUOTA_TOTAL || '30', 10); // e.g., 30 total
