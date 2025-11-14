@@ -108,7 +108,13 @@ const App: React.FC = () => {
       setError('');
       setStatus('');
       try {
-        // Send files to backend upload endpoint
+        // 1) Read files locally (old behavior) so we always have an in-memory vault
+        const files = await readFilesFromInput(fileList);
+        setVaultFiles(files);
+        saveVaultFiles(files);
+        setVaultFileCount(files.length);
+
+        // 2) Also send files to backend upload endpoint for server-side storage
         const formData = new FormData();
         for (let i = 0; i < fileList.length; i++) {
           const file = fileList[i];
@@ -127,9 +133,6 @@ const App: React.FC = () => {
         }
 
         const data = await response.json();
-        setVaultFiles([]); // Clear local files since they're now on server
-        saveVaultFiles([]); // Update localStorage
-        setVaultFileCount(data.files);
         setStatus(`Vault uploaded successfully: ${data.files} files`);
       } catch (e) {
         setError('Failed to upload vault files.');
@@ -151,7 +154,12 @@ const App: React.FC = () => {
     //   return;
     // }
 
-    // Vault is now stored on server, no local check needed
+    // Match previous backup behavior: require a local vault selection
+    if (vaultFiles.length === 0) {
+      setError('Please select your Obsidian vault folder in the settings.');
+      setIsSettingsModalOpen(true);
+      return;
+    }
 
     setError('');
     setStatus('');
@@ -160,6 +168,11 @@ const App: React.FC = () => {
 
     const userMessage: ChatMessage = { role: 'user', content: prompt };
     setMessages(prev => [...prev, userMessage]);
+
+    // Simple RAG: concatenate all file content (same as previous backup).
+    const context = vaultFiles
+      .map(file => `--- NOTE: ${file.name} ---\n${file.content}`)
+      .join('\n\n');
 
     try {
       // --- Call the backend proxy endpoint ---
@@ -181,7 +194,7 @@ const App: React.FC = () => {
       const response = await fetch('/api/proxy/chat', {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({ prompt, model: settings.model }), // Pass model if backend supports dynamic selection
+        body: JSON.stringify({ prompt, context, model: settings.model }), // Pass model + local context
       });
 
       if (!response.ok) {
@@ -225,7 +238,7 @@ const App: React.FC = () => {
       setIsLoading(false);
       setCurrentAiResponse('');
     }
-  }, [isLoading, settings.model]); // Removed settings.apiKey and vaultFiles dependencies
+  }, [isLoading, settings.model, vaultFiles]); // Depend on vaultFiles like previous backup
 
   return (
     <div className="bg-gradient-to-br from-background via-background to-background/50 text-text-primary h-screen flex flex-col font-sans relative overflow-hidden">

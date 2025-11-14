@@ -217,7 +217,7 @@ export default async function handler(req: any, res: any) {
   }
 
   // Support JSON bodies only
-  const { prompt, model: requestedModel } = req.body || {};
+  const { prompt, model: requestedModel, context } = req.body || {};
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ message: 'Prompt is required' });
   }
@@ -269,15 +269,25 @@ export default async function handler(req: any, res: any) {
     return res.status(403).json({ message: 'Free quota exceeded. Please sign up to continue.', remaining: quota.remaining });
   }
 
-  console.log('Vault context length:', vaultContext.length);
+  console.log('Vault context length from DB:', vaultContext.length);
+
+  // Prefer explicit context sent from the client (local vault) if provided,
+  // otherwise fall back to the server-stored vaultContext from the database.
+  let effectiveContext = '';
+  if (typeof context === 'string' && context.trim().length > 0) {
+    effectiveContext = context;
+  } else if (typeof vaultContext === 'string') {
+    effectiveContext = vaultContext;
+  }
+
   // TODO: This is a temporary fix for large contexts.
   // For a more robust solution, consider implementing Retrieval-Augmented Generation (RAG)
   // to intelligently select relevant parts of the context instead of truncating it.
   const MAX_CONTEXT_LENGTH = 1_000_000; // Allow up to ~1MB of context for now
-  let truncatedContext = vaultContext;
-  if (typeof vaultContext === 'string' && vaultContext.length > MAX_CONTEXT_LENGTH) {
-    console.log(`Vault context exceeds MAX_CONTEXT_LENGTH (${vaultContext.length} > ${MAX_CONTEXT_LENGTH}), truncating.`);
-    truncatedContext = vaultContext.substring(0, MAX_CONTEXT_LENGTH) + '... [context truncated]';
+  let truncatedContext = effectiveContext;
+  if (typeof effectiveContext === 'string' && effectiveContext.length > MAX_CONTEXT_LENGTH) {
+    console.log(`Effective context exceeds MAX_CONTEXT_LENGTH (${effectiveContext.length} > ${MAX_CONTEXT_LENGTH}), truncating.`);
+    truncatedContext = effectiveContext.substring(0, MAX_CONTEXT_LENGTH) + '... [context truncated]';
   }
   console.log('Using context length for prompt:', typeof truncatedContext === 'string' ? truncatedContext.length : 0);
 
